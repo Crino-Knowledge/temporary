@@ -1,0 +1,4 @@
+root: D:\学校文件\停车场项目\alg_vue\alg_vue-zxm 
+path: C:\Program Files\nodejs 
+arch: 64 
+proxy: none
