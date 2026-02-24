@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -2221,3 +2222,2228 @@
   </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地下停车场智能识别系统 - UI设计展示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #f8fafc;
+    }
+
+    /* 登录页样式 */
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+      z-index: 0;
+    }
+
+    .gradient-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .floating-shapes {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .shape-1 { width: 400px; height: 400px; top: -100px; right: -100px; animation-delay: 0s; }
+    .shape-2 { width: 300px; height: 300px; bottom: -50px; left: -50px; animation-delay: -5s; }
+    .shape-3 { width: 200px; height: 200px; top: 50%; left: 30%; animation-delay: -10s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-30px) rotate(180deg); }
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      padding: 40px;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .login-left {
+      flex: 1;
+      color: #ffffff;
+      padding: 40px;
+    }
+
+    .brand-section {
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .brand-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .brand-subtitle {
+      font-size: 18px;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .feature-text h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-text p {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .login-right {
+      width: 440px;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .login-header h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 52px;
+      padding: 0 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background: #f9fafb;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #667eea;
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .login-btn {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 16px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    .login-footer a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* 主布局样式 - 新设计 */
+    .main-layout {
+      display: none;
+      min-height: 100vh;
+      background: #dbeafe;
+      flex-direction: column;
+    }
+
+    /* 顶部导航 */
+    .main-header {
+      background: #faf8f0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      position: relative;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .menu-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .menu-toggle:hover {
+      background: #f1f5f9;
+      color: #667eea;
+    }
+
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .system-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: -0.5px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .action-btn:hover {
+      background: #f1f5f9;
+      color: #667eea;
+    }
+
+    .badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .user-info:hover {
+      background: #f1f5f9;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #ffffff;
+    }
+
+    .username {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
+    }
+
+    /* 顶部常驻功能菜单 */
+    .top-nav-bar {
+      background: #faf8f0;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+
+    .top-nav-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 52px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .top-nav-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .top-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .top-nav-item:hover {
+      background: #f8fafc;
+      color: #667eea;
+    }
+
+    .top-nav-item.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    /* 侧边栏遮罩 */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 199;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* 抽屉式侧边栏 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 260px;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      z-index: 200;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.visible {
+      transform: translateX(0);
+    }
+
+    .sidebar-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+      background: #f1f5f9;
+      color: #667eea;
+    }
+
+    .sidebar-menu {
+      flex: 1;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      height: 48px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      font-size: 14px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-item:hover {
+      background: #f8fafc;
+    }
+
+    .sidebar-item.active {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .sidebar-item i {
+      font-size: 18px;
+    }
+
+    .sidebar-footer {
+      padding: 20px 24px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .system-version {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* 主内容区 */
+    .main-content {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    /* 页面容器 */
+    .page-container {
+      display: none;
+    }
+
+    .page-container.active {
+      display: block;
+    }
+
+    /* 首页仪表盘样式 */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #faf8f0;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--card-color, #667eea);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--card-color, #667eea);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #ffffff;
+    }
+
+    .stat-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    .stat-trend {
+      font-size: 13px;
+      color: #10b981;
+      font-weight: 600;
+    }
+
+    /* 图表区域 */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background: #faf8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #ffffff;
+    }
+
+    .header-icon.purple {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .header-icon.orange {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .header-text h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: #94a3b8;
+      margin: 0;
+    }
+
+    .update-time {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    /* 仪表盘 */
+    .gauge-charts {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px 0;
+    }
+
+    .gauge-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .gauge-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(var(--gauge-color, #667eea) var(--gauge-value, 50%), #e2e8f0 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .gauge-circle::before {
+      content: '';
+      width: 110px;
+      height: 110px;
+      background: #ffffff;
+      border-radius: 50%;
+    }
+
+    .gauge-value {
+      position: absolute;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .gauge-label {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 12px;
+    }
+
+    /* 饼图 */
+    .pie-content {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .pie-chart {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #667eea 0deg 120deg,
+        #764ba2 120deg 200deg,
+        #f093fb 200deg 260deg,
+        #f5576c 260deg 300deg,
+        #4facfe 300deg 330deg,
+        #00f2fe 330deg 360deg
+      );
+    }
+
+    .pie-legend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-name {
+      color: #64748b;
+      flex: 1;
+    }
+
+    .legend-value {
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    /* 告警列表 */
+    .alarm-section {
+      background: #faf8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .alarm-table-header {
+      display: grid;
+      grid-template-columns: 80px 2fr 1.5fr 1.5fr 100px;
+      gap: 16px;
+      padding: 14px 20px;
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .alarm-item {
+      display: grid;
+      grid-template-columns: 80px 2fr 1.5fr 1.5fr 100px;
+      gap: 16px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      align-items: center;
+    }
+
+    .alarm-item:hover {
+      background: #f8fafc;
+    }
+
+    .index-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .index-badge.top {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: #ffffff;
+    }
+
+    .status-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-tag.unhandled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* 通用页面样式 */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .page-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #ffffff;
+    }
+
+    .page-title h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 4px 0;
+    }
+
+    .page-title p {
+      font-size: 14px;
+      color: #94a3b8;
+      margin: 0;
+    }
+
+    .add-btn {
+      height: 44px;
+      padding: 0 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .add-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    /* 搜索区域 */
+    .search-section {
+      background: #faf8f0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 4px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.3s ease;
+      max-width: 400px;
+    }
+
+    .search-box:focus-within {
+      border-color: #667eea;
+      background: #ffffff;
+    }
+
+    .search-box i {
+      font-size: 18px;
+      color: #94a3b8;
+      margin-left: 12px;
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      height: 40px;
+      font-size: 14px;
+      color: #1e293b;
+      outline: none;
+    }
+
+    .search-btn {
+      height: 40px;
+      padding: 0 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    /* 表格区域 */
+    .table-section {
+      background: #faf8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .table-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .custom-table {
+      border: 1px solid #f1f5f9;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: grid;
+      gap: 16px;
+      padding: 14px 20px;
+      align-items: center;
+    }
+
+    .table-row.header {
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .table-row:not(.header) {
+      border-top: 1px solid #f1f5f9;
+      font-size: 14px;
+      color: #475569;
+    }
+
+    .cell {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell.index {
+      text-align: center;
+    }
+
+    .cell.action {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .action-icon {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .action-icon.edit {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .action-icon.edit:hover {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .action-icon.delete {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .action-icon.delete:hover {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    .status-tag-inline {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .status-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-running {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* 分页 */
+    .pagination-wrapper {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .pagination-btn {
+      min-width: 36px;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .pagination-btn:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+
+    .pagination-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    /* 页面切换按钮 */
+    .page-switcher {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      gap: 8px;
+      background: #faf8f0;
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      flex-wrap: wrap;
+      max-width: 600px;
+      justify-content: center;
+    }
+
+    .switch-btn {
+      padding: 10px 16px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .switch-btn:hover {
+      border-color: #667eea;
+      color: #667eea;
+    }
+
+    .switch-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border-color: transparent;
+    }
+
+    /* 响应式 */
+    @media (max-width: 1200px) {
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .charts-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .login-container {
+        flex-direction: column;
+        padding: 20px;
+      }
+      .login-left {
+        display: none;
+      }
+      .login-right {
+        width: 100%;
+        padding: 32px;
+      }
+      .stats-row {
+        grid-template-columns: 1fr;
+      }
+      .page-switcher {
+        left: 12px;
+        right: 12px;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录页 -->
+  <div id="loginPage" class="login-page">
+    <div class="login-background">
+      <div class="gradient-overlay"></div>
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+    </div>
+
+    <div class="login-container">
+      <div class="login-left">
+        <div class="brand-section">
+          <div class="logo">&#127969;</div>
+          <h1 class="brand-title">地下停车场<br>智能识别系统</h1>
+          <p class="brand-subtitle">基于深度学习的智能停车管理解决方案<br>让停车更便捷，让管理更高效</p>
+        </div>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon">&#128247;</div>
+            <div class="feature-text">
+              <h4>智能车牌识别</h4>
+              <p>高精度识别，支持多种车牌类型</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#128200;</div>
+            <div class="feature-text">
+              <h4>实时数据分析</h4>
+              <p>多维度数据统计，可视化展示</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">&#128276;</div>
+            <div class="feature-text">
+              <h4>智能告警推送</h4>
+              <p>异常情况实时提醒，多渠道推送</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="login-right">
+        <div class="login-header">
+          <h2>欢迎登录</h2>
+          <p>请使用您的账号密码登录系统</p>
+        </div>
+
+        <form>
+          <div class="form-group">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-input" placeholder="请输入用户名" value="admin">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">密码</label>
+            <input type="password" class="form-input" placeholder="请输入密码" value="******">
+          </div>
+
+          <button type="button" class="login-btn" onclick="showMainLayout()">登 录</button>
+
+          <div class="login-footer">
+            <a href="#">忘记密码?</a>
+            <a href="#">注册账号</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主布局 -->
+  <div id="mainLayout" class="main-layout">
+    <!-- 顶部导航 -->
+    <header class="main-header">
+      <div class="header-left">
+        <div class="menu-toggle" onclick="toggleSidebar()">&#9776;</div>
+        <div class="header-logo">&#127969;</div>
+        <span class="system-title">地下停车场智能识别系统</span>
+      </div>
+
+      <div class="header-right">
+        <div class="header-actions">
+          <div class="action-btn">
+            &#128276;
+            <span class="badge">3</span>
+          </div>
+          <div class="action-btn">&#10067;</div>
+        </div>
+
+        <div class="user-info">
+          <div class="user-avatar">&#128100;</div>
+          <span class="username">管理员</span>
+          <span>&#9662;</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 顶部常驻功能菜单 -->
+    <div class="top-nav-bar">
+      <div class="top-nav-container">
+        <div class="top-nav-item active" onclick="showPage('dashboard')">&#127968; 首页</div>
+        <div class="top-nav-item" onclick="showPage('algorithm')">&#128230; 算法模型</div>
+        <div class="top-nav-item" onclick="showPage('task')">&#128176; 计算任务</div>
+        <div class="top-nav-item" onclick="showPage('alarm')">&#128276; 告警中心</div>
+        <div class="top-nav-item" onclick="showPage('pushlog')">&#128240; 推送日志</div>
+        <div class="top-nav-item" onclick="showPage('customer')">&#9989; 客户管理</div>
+        <div class="top-nav-item" onclick="showPage('user')">&#128100; 用户管理</div>
+        <div class="top-nav-item" onclick="showPage('dict')">&#128218; 字典管理</div>
+      </div>
+    </div>
+
+    <!-- 侧边栏遮罩 -->
+    <div id="sidebarOverlay" class="sidebar-overlay" style="display: none;" onclick="toggleSidebar()"></div>
+
+    <!-- 抽屉式侧边栏 -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">功能菜单</span>
+        <div class="close-btn" onclick="toggleSidebar()">&#10005;</div>
+      </div>
+      <div class="sidebar-menu">
+        <div class="sidebar-item active" onclick="showPage('dashboard'); toggleSidebar();">&#127968; 首页</div>
+        <div class="sidebar-item" onclick="showPage('algorithm'); toggleSidebar();">&#128230; 算法模型</div>
+        <div class="sidebar-item" onclick="showPage('task'); toggleSidebar();">&#128176; 计算任务</div>
+        <div class="sidebar-item" onclick="showPage('alarm'); toggleSidebar();">&#128276; 告警中心</div>
+        <div class="sidebar-item" onclick="showPage('pushlog'); toggleSidebar();">&#128240; 推送日志</div>
+        <div class="sidebar-item" onclick="showPage('customer'); toggleSidebar();">&#9989; 客户管理</div>
+        <div class="sidebar-item" onclick="showPage('user'); toggleSidebar();">&#128100; 用户管理</div>
+        <div class="sidebar-item" onclick="showPage('dict'); toggleSidebar();">&#128218; 字典管理</div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="system-version">
+          <span>&#8505;</span>
+          <span>系统版本 v2.0.0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 首页/仪表盘 -->
+      <div id="dashboard" class="page-container active">
+        <div class="stats-row">
+          <div class="stat-card" style="--card-color: #667eea;">
+            <div class="stat-icon">&#128230;</div>
+            <div class="stat-content">
+              <span class="stat-value">18</span>
+              <span class="stat-label">算法模型个数</span>
+            </div>
+            <div class="stat-trend">+5%</div>
+          </div>
+          <div class="stat-card" style="--card-color: #764ba2;">
+            <div class="stat-icon">&#128176;</div>
+            <div class="stat-content">
+              <span class="stat-value">106</span>
+              <span class="stat-label">计算任务总数</span>
+            </div>
+            <div class="stat-trend">+12%</div>
+          </div>
+          <div class="stat-card" style="--card-color: #f093fb;">
+            <div class="stat-icon">&#9654;</div>
+            <div class="stat-content">
+              <span class="stat-value">35</span>
+              <span class="stat-label">正在运行任务</span>
+            </div>
+            <div class="stat-trend">+8%</div>
+          </div>
+          <div class="stat-card" style="--card-color: #f5576c;">
+            <div class="stat-icon">&#128276;</div>
+            <div class="stat-content">
+              <span class="stat-value">3179</span>
+              <span class="stat-label">历史告警次数</span>
+            </div>
+            <div class="stat-trend">+3%</div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="card-header">
+              <div class="header-left">
+                <div class="header-icon purple">&#128187;</div>
+                <div class="header-text">
+                  <h3>系统资源监控</h3>
+                  <p>实时性能数据</p>
+                </div>
+              </div>
+              <span class="update-time">更新于 2026-02-23 10:30:00</span>
+            </div>
+            <div class="gauge-charts">
+              <div class="gauge-item">
+                <div class="gauge-circle" style="--gauge-color: #667eea; --gauge-value: 50%;">
+                  <span class="gauge-value">50%</span>
+                </div>
+                <span class="gauge-label">内存使用率</span>
+              </div>
+              <div class="gauge-item">
+                <div class="gauge-circle" style="--gauge-color: #764ba2; --gauge-value: 65%;">
+                  <span class="gauge-value">65%</span>
+                </div>
+                <span class="gauge-label">CPU使用率</span>
+              </div>
+              <div class="gauge-item">
+                <div class="gauge-circle" style="--gauge-color: #f093fb; --gauge-value: 80%;">
+                  <span class="gauge-value">80%</span>
+                </div>
+                <span class="gauge-label">GPU使用率</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="card-header">
+              <div class="header-left">
+                <div class="header-icon orange">&#128202;</div>
+                <div class="header-text">
+                  <h3>告警类型分布</h3>
+                  <p>近30天数据统计</p>
+                </div>
+              </div>
+              <span class="update-time">更新于 2026-02-23 10:30:00</span>
+            </div>
+            <div class="pie-content">
+              <div class="pie-chart"></div>
+              <div class="pie-legend">
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #667eea;"></span>
+                  <span class="legend-name">裸土砂石告警</span>
+                  <span class="legend-value">1048</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #764ba2;"></span>
+                  <span class="legend-name">秸秆燃烧告警</span>
+                  <span class="legend-value">735</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #f093fb;"></span>
+                  <span class="legend-name">车牌识别</span>
+                  <span class="legend-value">580</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #f5576c;"></span>
+                  <span class="legend-name">河道漂浮物</span>
+                  <span class="legend-value">484</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #4facfe;"></span>
+                  <span class="legend-name">城市流动摊贩</span>
+                  <span class="legend-value">300</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot" style="background: #00f2fe;"></span>
+                  <span class="legend-name">其他告警</span>
+                  <span class="legend-value">200</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alarm-section">
+          <div class="section-header">
+            <div class="header-left">
+              <div class="header-icon" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #ffffff;">&#128276;</div>
+              <div class="header-text">
+                <h3>最新告警</h3>
+                <p>实时告警信息</p>
+              </div>
+            </div>
+            <button class="add-btn" style="background: transparent; color: #667eea; border: 1px solid #667eea;">&#8635; 刷新</button>
+          </div>
+
+          <div class="alarm-table-header">
+            <span class="col-index">序号</span>
+            <span class="col-type">告警类型</span>
+            <span class="col-time">告警时间</span>
+            <span class="col-customer">客户名称</span>
+            <span class="col-status">状态</span>
+          </div>
+
+          <div class="alarm-item">
+            <span class="col-index"><span class="index-badge top">01</span></span>
+            <span class="col-type">&#9888; 车牌识别异常</span>
+            <span class="col-time">2026-02-23 10:28:15</span>
+            <span class="col-customer">万达广场停车场</span>
+            <span class="col-status"><span class="status-tag unhandled">未处理</span></span>
+          </div>
+          <div class="alarm-item">
+            <span class="col-index"><span class="index-badge top">02</span></span>
+            <span class="col-type">&#9888; 设备离线</span>
+            <span class="col-time">2026-02-23 10:25:42</span>
+            <span class="col-customer">国贸中心停车场</span>
+            <span class="col-status"><span class="status-tag unhandled">未处理</span></span>
+          </div>
+          <div class="alarm-item">
+            <span class="col-index"><span class="index-badge top">03</span></span>
+            <span class="col-type">&#9888; 存储空间不足</span>
+            <span class="col-time">2026-02-23 10:20:18</span>
+            <span class="col-customer">科技园停车场</span>
+            <span class="col-status"><span class="status-tag unhandled">未处理</span></span>
+          </div>
+          <div class="alarm-item">
+            <span class="col-index"><span class="index-badge">04</span></span>
+            <span class="col-type">&#9888; 网络延迟过高</span>
+            <span class="col-time">2026-02-23 10:15:33</span>
+            <span class="col-customer">体育中心停车场</span>
+            <span class="col-status"><span class="status-tag">已处理</span></span>
+          </div>
+          <div class="alarm-item">
+            <span class="col-index"><span class="index-badge">05</span></span>
+            <span class="col-type">&#9888; 摄像头遮挡</span>
+            <span class="col-time">2026-02-23 10:10:09</span>
+            <span class="col-customer">医院停车场</span>
+            <span class="col-status"><span class="status-tag">已处理</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 算法模型页 -->
+      <div id="algorithm" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">&#128230;</div>
+            <div class="page-title">
+              <h2>算法模型管理</h2>
+              <p>管理系统算法模型配置</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 添加模型</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索模型名称...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">模型列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 18 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">模型名称</div>
+              <div class="cell">模型类型</div>
+              <div class="cell">版本</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">车牌识别模型 V3</div>
+              <div class="cell">图像识别</div>
+              <div class="cell">v3.2.1</div>
+              <div class="cell"><span class="status-tag-inline status-active">运行中</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">车辆检测模型</div>
+              <div class="cell">目标检测</div>
+              <div class="cell">v2.5.0</div>
+              <div class="cell"><span class="status-tag-inline status-active">运行中</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">人脸识别模型</div>
+              <div class="cell">生物识别</div>
+              <div class="cell">v1.8.3</div>
+              <div class="cell"><span class="status-tag-inline status-inactive">已停用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 计算任务页 -->
+      <div id="task" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">&#128176;</div>
+            <div class="page-title">
+              <h2>计算任务管理</h2>
+              <p>管理算法计算任务</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 新建任务</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索任务名称...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">任务列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 106 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">任务名称</div>
+              <div class="cell">所属模型</div>
+              <div class="cell">优先级</div>
+              <div class="cell">进度</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">车牌识别任务-001</div>
+              <div class="cell">车牌识别模型 V3</div>
+              <div class="cell">高</div>
+              <div class="cell">78%</div>
+              <div class="cell"><span class="status-tag-inline status-running">运行中</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">车辆检测任务-A区</div>
+              <div class="cell">车辆检测模型</div>
+              <div class="cell">中</div>
+              <div class="cell">45%</div>
+              <div class="cell"><span class="status-tag-inline status-running">运行中</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">数据同步任务</div>
+              <div class="cell">系统任务</div>
+              <div class="cell">低</div>
+              <div class="cell">0%</div>
+              <div class="cell"><span class="status-tag-inline status-pending">等待中</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 告警中心页 -->
+      <div id="alarm" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">&#128276;</div>
+            <div class="page-title">
+              <h2>告警中心</h2>
+              <p>查看和处理系统告警</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 告警规则</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索告警内容...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">告警列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 3179 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">告警内容</div>
+              <div class="cell">告警级别</div>
+              <div class="cell">告警时间</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge top">1</span></div>
+              <div class="cell">车牌识别异常</div>
+              <div class="cell"><span style="color: #ef4444; font-weight: 600;">严重</span></div>
+              <div class="cell">2026-02-23 10:28:15</div>
+              <div class="cell"><span class="status-tag-inline status-inactive">未处理</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge top">2</span></div>
+              <div class="cell">设备离线</div>
+              <div class="cell"><span style="color: #f59e0b; font-weight: 600;">警告</span></div>
+              <div class="cell">2026-02-23 10:25:42</div>
+              <div class="cell"><span class="status-tag-inline status-inactive">未处理</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">存储空间不足</div>
+              <div class="cell"><span style="color: #f59e0b; font-weight: 600;">警告</span></div>
+              <div class="cell">2026-02-23 10:20:18</div>
+              <div class="cell"><span class="status-tag-inline status-active">已处理</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 推送日志页 -->
+      <div id="pushlog" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">&#128240;</div>
+            <div class="page-title">
+              <h2>推送日志</h2>
+              <p>查看消息推送记录</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 导出日志</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索日志内容...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">推送记录</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 256 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">推送内容</div>
+              <div class="cell">推送渠道</div>
+              <div class="cell">推送时间</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">设备离线告警推送</div>
+              <div class="cell">短信+邮件</div>
+              <div class="cell">2026-02-23 10:25:42</div>
+              <div class="cell"><span class="status-tag-inline status-active">成功</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">任务完成通知</div>
+              <div class="cell">邮件</div>
+              <div class="cell">2026-02-23 10:20:18</div>
+              <div class="cell"><span class="status-tag-inline status-active">成功</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 2fr 1.5fr 1.5fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">系统维护通知</div>
+              <div class="cell">短信</div>
+              <div class="cell">2026-02-23 10:15:33</div>
+              <div class="cell"><span class="status-tag-inline status-inactive">失败</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 客户管理页 -->
+      <div id="customer" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">&#9989;</div>
+            <div class="page-title">
+              <h2>客户管理</h2>
+              <p>管理客户信息及权限</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 添加客户</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索客户名称...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">客户列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 24 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">客户名称</div>
+              <div class="cell">联系人</div>
+              <div class="cell">手机号</div>
+              <div class="cell">算法个数</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">万达广场停车场</div>
+              <div class="cell">张经理</div>
+              <div class="cell">138****8888</div>
+              <div class="cell">5</div>
+              <div class="cell"><span class="status-tag-inline status-active">启用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">国贸中心停车场</div>
+              <div class="cell">李主任</div>
+              <div class="cell">139****6666</div>
+              <div class="cell">3</div>
+              <div class="cell"><span class="status-tag-inline status-active">启用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">科技园停车场</div>
+              <div class="cell">王主管</div>
+              <div class="cell">137****9999</div>
+              <div class="cell">8</div>
+              <div class="cell"><span class="status-tag-inline status-inactive">停用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户管理页 -->
+      <div id="user" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">&#128100;</div>
+            <div class="page-title">
+              <h2>用户管理</h2>
+              <p>管理系统用户信息及权限</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 添加用户</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索用户名...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">用户列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 12 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1.5fr 1.5fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">姓名</div>
+              <div class="cell">登录名</div>
+              <div class="cell">性别</div>
+              <div class="cell">邮箱</div>
+              <div class="cell">地址</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1.5fr 1.5fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">张三</div>
+              <div class="cell">zhangsan</div>
+              <div class="cell">男</div>
+              <div class="cell">zhangsan@example.com</div>
+              <div class="cell">北京市朝阳区</div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1.5fr 1.5fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">李四</div>
+              <div class="cell">lisi</div>
+              <div class="cell">女</div>
+              <div class="cell">lisi@example.com</div>
+              <div class="cell">上海市浦东新区</div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 1fr 1.5fr 1.5fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">王五</div>
+              <div class="cell">wangwu</div>
+              <div class="cell">男</div>
+              <div class="cell">wangwu@example.com</div>
+              <div class="cell">广州市天河区</div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 字典管理页 -->
+      <div id="dict" class="page-container">
+        <div class="page-header">
+          <div class="header-content">
+            <div class="page-icon" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">&#128218;</div>
+            <div class="page-title">
+              <h2>字典管理</h2>
+              <p>管理系统数据字典</p>
+            </div>
+          </div>
+          <button class="add-btn">+ 添加字典</button>
+        </div>
+
+        <div class="search-section">
+          <div class="search-box">
+            <span>&#128269;</span>
+            <input type="text" placeholder="搜索字典名称...">
+            <button class="search-btn">搜索</button>
+          </div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">
+            <span class="table-title">字典列表</span>
+            <span style="color: #94a3b8; font-size: 13px;">共 8 条记录</span>
+          </div>
+
+          <div class="custom-table">
+            <div class="table-row header" style="grid-template-columns: 80px 1.5fr 1fr 2fr 1fr 120px;">
+              <div class="cell index">序号</div>
+              <div class="cell">字典名称</div>
+              <div class="cell">字典类型</div>
+              <div class="cell">字典值</div>
+              <div class="cell">状态</div>
+              <div class="cell action">操作</div>
+            </div>
+
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 2fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">1</span></div>
+              <div class="cell">告警级别</div>
+              <div class="cell">alarm_level</div>
+              <div class="cell">严重,警告,提示</div>
+              <div class="cell"><span class="status-tag-inline status-active">启用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 2fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">2</span></div>
+              <div class="cell">任务状态</div>
+              <div class="cell">task_status</div>
+              <div class="cell">运行中,等待中,已完成,失败</div>
+              <div class="cell"><span class="status-tag-inline status-active">启用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+            <div class="table-row" style="grid-template-columns: 80px 1.5fr 1fr 2fr 1fr 120px;">
+              <div class="cell index"><span class="index-badge">3</span></div>
+              <div class="cell">推送渠道</div>
+              <div class="cell">push_channel</div>
+              <div class="cell">短信,邮件,APP推送</div>
+              <div class="cell"><span class="status-tag-inline status-active">启用</span></div>
+              <div class="cell action">
+                <button class="action-icon edit">&#9998;</button>
+                <button class="action-icon delete">&#128465;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="pagination-wrapper">
+            <button class="pagination-btn">上一页</button>
+            <button class="pagination-btn active">1</button>
+            <button class="pagination-btn">2</button>
+            <button class="pagination-btn">3</button>
+            <button class="pagination-btn">下一页</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 页面切换按钮 -->
+  <div class="page-switcher">
+    <button class="switch-btn active" onclick="showPage('login')">登录页</button>
+    <button class="switch-btn" onclick="showPage('dashboard')">首页</button>
+    <button class="switch-btn" onclick="showPage('algorithm')">算法模型</button>
+    <button class="switch-btn" onclick="showPage('task')">计算任务</button>
+    <button class="switch-btn" onclick="showPage('alarm')">告警中心</button>
+    <button class="switch-btn" onclick="showPage('pushlog')">推送日志</button>
+    <button class="switch-btn" onclick="showPage('customer')">客户管理</button>
+    <button class="switch-btn" onclick="showPage('user')">用户管理</button>
+    <button class="switch-btn" onclick="showPage('dict')">字典管理</button>
+  </div>
+
+  <script>
+    let currentPage = 'login';
+    let sidebarVisible = false;
+
+    function showMainLayout() {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('mainLayout').style.display = 'flex';
+      currentPage = 'dashboard';
+      updateSwitchButtons();
+    }
+
+    function toggleSidebar() {
+      sidebarVisible = !sidebarVisible;
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+
+      if (sidebarVisible) {
+        sidebar.classList.add('visible');
+        overlay.style.display = 'block';
+      } else {
+        sidebar.classList.remove('visible');
+        overlay.style.display = 'none';
+      }
+    }
+
+    function showPage(pageName) {
+      currentPage = pageName;
+
+      if (pageName === 'login') {
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('mainLayout').style.display = 'none';
+      } else {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainLayout').style.display = 'flex';
+
+        // 隐藏所有页面
+        document.querySelectorAll('.page-container').forEach(page => {
+          page.classList.remove('active');
+        });
+
+        // 显示对应页面
+        document.getElementById(pageName).classList.add('active');
+
+        // 更新顶部导航激活状态
+        document.querySelectorAll('.top-nav-item').forEach((item, index) => {
+          const pages = ['dashboard', 'algorithm', 'task', 'alarm', 'pushlog', 'customer', 'user', 'dict'];
+          if (pages[index] === pageName) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+
+        // 更新侧边栏激活状态
+        document.querySelectorAll('.sidebar-item').forEach((item, index) => {
+          const pages = ['dashboard', 'algorithm', 'task', 'alarm', 'pushlog', 'customer', 'user', 'dict'];
+          if (pages[index] === pageName) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+
+      updateSwitchButtons();
+    }
+
+    function updateSwitchButtons() {
+      document.querySelectorAll('.switch-btn').forEach((btn, index) => {
+        const pages = ['login', 'dashboard', 'algorithm', 'task', 'alarm', 'pushlog', 'customer', 'user', 'dict'];
+        if (pages[index] === currentPage) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+>>>>>>> 2bc219ab8c6ffc1b1880b218907b3170ce44a4ca
