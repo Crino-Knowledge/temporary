@@ -1,161 +1,101 @@
 <template>
-  <div>
-    <!--Layout布局-->
-    <el-row>
-      <el-col :span="24">
-        <el-row :gutter="20">
-          <el-col :span="3">
-            <!--搜索区域-->
-            <el-input
-              placeholder="请输入关键字"
-              v-model="queryInfo.searchKey"
-              clearable
-              @keyup.enter.native="changeTypeList"
-              @clear="changeTypeList"
-            >
-              <el-button
-                slot="append"
-                icon="el-icon-search"
-                @click="changeTypeList"
-              ></el-button>
-            </el-input>
-          </el-col>
-          <el-col :span="3.5">
-            <span class="cf">任务名称：</span>
-            <el-select
-              v-model="queryInfo.taskNo"
-              filterable
-              clearable
-              remote
-              reserve-keyword
-              placeholder="请输入任务名称"
-              @change="changeTypeList"
-              :remote-method="remoteMethodtaskNo"
-              :loading="loadingTaskNo">
-              <el-option
-                v-for="item in taskList"
-                :key="item.taskNo"
-                :label="item.taskName"
-                :value="item.taskNo">
-              </el-option>
-            </el-select>
-          </el-col>
-          <el-col :span="3.5">
-            <span class="cf">告警类型：</span>
-            <el-select v-model="queryInfo.alarmType" placeholder="请选择告警类型" @change="changeTypeList" clearable size="medium" >
-              <el-option v-for="dict in alarmTypeList" :key="dict.id" :label="dict.name" :value="dict.id" />
-            </el-select>
-          </el-col>
-          <el-col :span="3.5">
-            <span class="cf">客户名称：</span>
-            <el-select
-            v-model="queryInfo.customerNo"
-            filterable
-            clearable
-            remote
-            reserve-keyword
-            placeholder="请输入客户名称"
-            @change="changeTypeList"
-            :remote-method="remoteMethodCustomerNo"
-            :loading="loadingCustomerNo">
-            <el-option
-              v-for="item in customerList"
-              :key="item.customerNo"
-              :label="item.name"
-              :value="item.customerNo">
-            </el-option>
-          </el-select>
-          </el-col>
-         
-          <el-col :span="3.5">
-            <span class="cf">模型名称：</span>
-            <el-select
-            v-model="queryInfo.modelNo"
-            filterable
-            clearable
-            remote
-            reserve-keyword
-            placeholder="请输入模型名称"
-            :remote-method="remoteMethodModel"
-            @change="changeTypeList"
-            :loading="loadingModelNo">
-            <el-option
-              v-for="item in modelNoList"
-              :key="item.modelNo"
-              :label="item.name"
-              :value="item.modelNo">
-            </el-option>
-          </el-select>
-          </el-col>
-          <!-- <el-col :span="2.5">
-            <el-button type="primary" @click="addDialogVisible = true">添加</el-button>
-          </el-col> -->
-        </el-row>
-      </el-col>
-      <el-col :span="24">
-        <!--表格-->
-        <el-table
-          :data="pageList"
-          border
-          v-loading="loadingTable"
-        >
-          <el-table-column type="index" label="序号" width="80" align="center"></el-table-column>
-          <el-table-column prop="name" label="告警名称" align="center"></el-table-column>
-          <el-table-column prop="alarmType" label="告警类型" align="center">
+  <div class="page-container">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="page-icon red">
+          <i class="el-icon-bell"></i>
+        </div>
+        <div class="page-title">
+          <h2>告警中心</h2>
+          <p>查看和处理系统告警</p>
+        </div>
+      </div>
+      <button class="add-btn" @click="addDialogVisible = true">
+        <i class="el-icon-plus"></i> 告警规则
+      </button>
+    </div>
+
+    <!-- 搜索区域 -->
+    <div class="search-section">
+      <div class="search-box">
+        <i class="el-icon-search search-icon"></i>
+        <el-input
+          v-model="queryInfo.searchKey"
+          placeholder="搜索告警内容..."
+          clearable
+          @clear="changeTypeList"
+          @keyup.enter.native="changeTypeList"
+          class="search-input"
+        />
+        <button class="search-btn" @click="changeTypeList">搜索</button>
+      </div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-section">
+      <div class="table-header">
+        <span class="table-title">告警列表</span>
+        <span class="table-count">共 {{ total }} 条记录</span>
+      </div>
+
+      <div class="custom-table">
+        <el-table :data="pageList" style="width: 100%" v-loading="loadingTable">
+          <el-table-column type="index" label="序号" width="80" align="center">
+            <template slot-scope="scope">
+              <span class="index-badge" :class="{ 'top': scope.$index < 3 }">{{ scope.$index + 1 }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="name" label="告警名称" min-width="150" align="center"></el-table-column>
+          <el-table-column prop="alarmType" label="告警类型" min-width="120" align="center">
             <template slot-scope="scope">
               {{ getDitcLabel(alarmTypeList,scope.row.alarmType) }}
             </template>
-            
           </el-table-column>
-          <el-table-column prop="alarmImage" label="告警图片" align="center">
-              <template slot-scope="scope">
-                <el-image 
-                  style="width: 30px; height: 30px"
-                  :src="scope.row.alarmImage" 
-                  :preview-src-list="alarmImageList">
-                </el-image>
-              </template>
-          </el-table-column>
-          <el-table-column prop="alarmDate" label="告警时间" align="center">
-          </el-table-column>
-          <el-table-column prop="taskNo" label="算法任务号" align="center"></el-table-column>
-          <el-table-column prop="modelName" label="模型名称" align="center"></el-table-column>
-          <el-table-column prop="customerName" label="客户名称" align="center"></el-table-column>
-          <el-table-column label="操作">
-            <!-- 作用域插槽 -->
+          <el-table-column prop="alarmImage" label="告警图片" min-width="100" align="center">
             <template slot-scope="scope">
-              <!--修改按钮-->
-              <el-button
-                type="primary"
-                size="mini"
-                @click="showEditDialog(scope.row)"
-              >详情</el-button>
-              <!--删除按钮-->
-              <el-button
-                type="danger"
-                size="mini"
-                icon="el-icon-delete"
-                v-if="false"
-                @click="deleteById(scope.row.id)"
-              ></el-button>
+              <el-image
+                style="width: 30px; height: 30px"
+                :src="scope.row.alarmImage"
+                :preview-src-list="alarmImageList">
+              </el-image>
+            </template>
+          </el-table-column>
+          <el-table-column prop="alarmDate" label="告警时间" min-width="150" align="center"></el-table-column>
+          <el-table-column prop="taskNo" label="算法任务号" min-width="120" align="center"></el-table-column>
+          <el-table-column prop="modelName" label="模型名称" min-width="120" align="center"></el-table-column>
+          <el-table-column prop="customerName" label="客户名称" min-width="120" align="center"></el-table-column>
+          <el-table-column label="操作" fixed="right" width="120" align="center">
+            <template slot-scope="scope">
+              <div class="action-btns">
+                <button class="action-icon edit" @click="showEditDialog(scope.row)">
+                  <i class="el-icon-view"></i>
+                </button>
+                <button class="action-icon delete" @click="deleteById(scope.row.id)" v-if="false">
+                  <i class="el-icon-delete"></i>
+                </button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
-      </el-col>
-    </el-row>
-    <el-row>
-      <!--分页区域-->
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="queryInfo.pageNum"
-        :page-sizes="[1, 2, 5, 10]"
-        :page-size="queryInfo.pageSize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-      >
-      </el-pagination>
-    </el-row>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="queryInfo.pageNum"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="queryInfo.pageSize"
+          layout="total, sizes, prev, pager, next"
+          :total="total"
+          background
+        >
+        </el-pagination>
+      </div>
+    </div>
+
     <!--添加对象的对话框-->
     <el-dialog title="添加" :visible.sync="addDialogVisible" width="30%" @close="addDialogClosed">
       <!--内容主体区域-->
@@ -170,7 +110,7 @@
           <el-input v-model="addForm.alarmImage"></el-input>
         </el-form-item>
         <el-form-item label="告警时间" prop="alarmTime">
-          <el-date-picker v-model="addForm.告警时间" type="date"
+          <el-date-picker v-model="addForm.alarmTime" type="date"
             value-format="timestamp" placeholder="选择日期" style="width: 420px">
           </el-date-picker>
         </el-form-item>
@@ -196,6 +136,7 @@
         <el-button type="primary" @click="addObj">确 定</el-button>
       </span>
     </el-dialog>
+
     <!--修改用户的对话框-->
     <el-dialog title="查看" :visible.sync="editDialogVisible" width="30%">
       <el-descriptions class="margin-top" title="告警内容" :column="3"  border>
@@ -215,9 +156,9 @@
           <template slot="label">
             告警图片
           </template>
-          <el-image 
+          <el-image
             style="width: 100px; height: 100px"
-            :src="editForm.alarmImage" 
+            :src="editForm.alarmImage"
             :preview-src-list="[editForm.alarmImage]">
           </el-image>
         </el-descriptions-item>
@@ -331,7 +272,7 @@ export default {
       if(res.data.code == 200){
         this.alarmTypeList = res.data.data.data
       }
-      
+
     })
   },
   methods: {
@@ -340,7 +281,7 @@ export default {
       getTaskNoListPage({
         searchKey: query, // 查询参数
         pageNum: 1, // 当前页码
-        pageSize: 50, //页面大小        
+        pageSize: 50, //页面大小
       }).then(res=>{
         this.loadingTaskNo = false
         if(res.data.code === 200){
@@ -366,7 +307,7 @@ export default {
         if (res.data.code === 200) {
             this.modelNoList = res.data.data.list;
         }
-          
+
       }).catch(err=>{
         this.loadingModelNo = false
       })
@@ -466,7 +407,7 @@ export default {
     // 监听修改状态
     showEditDialog(obj) {
       this.editDialogVisible = true;
-      
+
       this.editForm = obj;
     },
     //修改
@@ -528,15 +469,292 @@ export default {
 };
 </script>
 
-<style >
-.el-row {
+<style scoped>
+/* 页面容器 */
+.page-container {
+  padding: 0;
+}
+
+/* 页面头部 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 31px; /* 原28px +3 */
+  color: #ffffff;
+}
+
+.page-icon.red {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.page-title h2 {
+  font-size: 27px; /* 原24px +3 */
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.page-title p {
+  font-size: 17px; /* 原14px +3 */
+  color: #94a3b8;
+  margin: 0;
+}
+
+.add-btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-size: 17px; /* 原14px +3 */
+  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* 搜索区域 */
+.search-section {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 4px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  max-width: 400px;
+}
+
+.search-box:focus-within {
+  border-color: #667eea;
+  background: #ffffff;
+}
+
+.search-icon {
+  font-size: 21px; /* 原18px +3 */
+  color: #94a3b8;
+  margin-left: 12px;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.search-input >>> .el-input__inner {
+  border: none;
+  background: transparent;
+  height: 40px;
+  font-size: 17px; /* 原14px +3 */
+  color: #1e293b;
+}
+
+.search-btn {
+  height: 40px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px; /* 原14px +3 */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 表格区域 */
+.table-section {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
-.el-col {
-  border-radius: 4px;
+
+.table-title {
+  font-size: 21px; /* 原18px +3 */
+  font-weight: 600;
+  color: #1e293b;
 }
-/* .el-card {
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) !important;
-  height: 60pt;
-} */
+
+.table-count {
+  color: #94a3b8;
+  font-size: 16px; /* 原13px +3 */
+}
+
+.custom-table >>> .el-table {
+  background: transparent;
+}
+
+.custom-table >>> .el-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 16px; /* 原13px +3 */
+}
+
+.custom-table >>> .el-table td {
+  font-size: 17px; /* 原14px +3 */
+  color: #475569;
+}
+
+.custom-table >>> .el-table--enable-row-hover .el-table__body tr:hover > td {
+  background: #f8fafc;
+}
+
+.index-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 16px; /* 原13px +3 */
+  font-weight: 600;
+  color: #64748b;
+}
+
+.index-badge.top {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 15px; /* 原12px +3 */
+  font-weight: 500;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-running {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.action-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px; /* 原14px +3 */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-icon.edit {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.action-icon.edit:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.action-icon.delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.action-icon.delete:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>
+
+<!-- 全局放大Element UI组件内置文字 -->
+<style>
+.el-pagination, .el-dialog, .el-form, .el-descriptions {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-descriptions-item__label, .el-descriptions-item__content {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-dialog__title {
+  font-size: 20px !important; /* 原17px +3 */
+}
+.el-form-item__label, .el-input__inner, .el-button {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-date-picker {
+  font-size: 17px !important; /* 原14px +3 */
+}
 </style>
