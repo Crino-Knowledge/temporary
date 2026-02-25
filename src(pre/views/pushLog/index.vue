@@ -1,105 +1,106 @@
 <template>
-    <div class="app-container">
-        <el-form :model="queryParams" ref="queryForm" :inline="true" v-show="showSearch" label-width="160px">
-            <el-form-item label="关键字" prop="searchKey">
-                <el-input v-model="queryParams.searchKey" placeholder="请输入关键字" clearable size="small"
-                    style="width: 240px" @keyup.enter.native="handleQuery" />
-            </el-form-item>
-
-            <el-form-item label="设备序列号" prop="deviceKey">
-                <el-input v-model="queryParams.deviceKey" placeholder="请输入设备序列号" clearable size="small"
-                    style="width: 240px" @keyup.enter.native="handleQuery" />
-            </el-form-item>
-            <el-form-item label="开始日期/结束日期">
-                <el-date-picker v-model="dateRange" size="small" style="width: 360px" value-format="yyyy-MM-dd"
-                    type="daterange" @change="handleQuery" range-separator="-" start-placeholder="开始日期"
-                    end-placeholder="结束日期">
-                </el-date-picker>
-            </el-form-item>
-
-            <el-form-item label="推送类型">
-                <el-select v-model="queryParams.pushType" @change="handleQuery" placeholder="推送类型" clearable
-                    size="small" style="width: 240px">
-                    <el-option v-for="dict in this.statusList" :key="dict.value" :label="dict.label"
-                        :value="dict.value" />
-                </el-select>
-            </el-form-item>
-            <el-form-item label="安装区域" prop="regionCode">
-                <el-cascader clearable style="width: 240px;" change-on-select :props="defaultProps"
-                    v-model="regionCodeList" :options="addressList" @change="changeRegionQuery"></el-cascader>
-            </el-form-item>
-            <el-form-item label="设备类型" prop="productType">
-                <el-cascader change-on-select clearable :show-all-levels="false" v-model="productTypeList"
-                    @change="changeDeviceQuery" :options="videoTypeList"
-                    :props="{ children: 'childList', label: 'name', value: 'id' }"></el-cascader>
-            </el-form-item>
-            <el-form-item label="是否最新推送">
-                <el-select v-model="queryParams.latestData" @change="handleQuery" placeholder="是否最新推送" clearable
-                    size="small" style="width: 240px">
-                    <el-option v-for="dict in this.statusList2" :key="dict.value" :label="dict.label"
-                        :value="dict.value" />
-                </el-select>
-            </el-form-item>
-
-            <el-form-item label="推送状态">
-                <el-select v-model="queryParams.status" @change="handleQuery" placeholder="推送状态" clearable size="small"
-                    style="width: 240px">
-                    <el-option v-for="dict in this.statusList3" :key="dict.value" :label="dict.label"
-                        :value="dict.value" />
-                </el-select>
-            </el-form-item>
-
-            <el-form-item>
-                <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-                <el-button icon="el-icon-refresh" type="info" size="mini" @click="resetQuery">重置</el-button>
-                <div style="float:right;margin-left:300px;">
-                    <el-button type="danger" plain icon="el-icon-refresh" size="mini" @click="handleRefreshCache"
-                        v-hasPermi="['system:config:remove']">刷新缓存</el-button>
-                    <el-button type="warning" plain icon="el-icon-upload2" size="mini"
-                        @click="handleExport">导出</el-button>
-                    <el-button type="warning" style="margin-left:20px;" plain icon="el-icon-upload2" size="mini"
-                        @click="handleExportwl">物联导出</el-button>
+    <div class="page-container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <div class="header-content">
+                <div class="page-icon purple">
+                    <i class="el-icon-s-promotion"></i>
                 </div>
-            </el-form-item>
-        </el-form>
+                <div class="page-title">
+                    <h2>推送日志</h2>
+                    <p>查看消息推送记录</p>
+                </div>
+            </div>
+            <button class="add-btn" @click="handleExport">
+                <i class="el-icon-download"></i> 导出日志
+            </button>
+        </div>
 
-        <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
-            <el-table-column type="selection" width="55" align="center" />
-            <!-- <el-table-column label="日志编号" align="center" prop="id" /> -->
-            <el-table-column label="设备序列号" align="center" prop="deviceSerialNum" />
-            <!-- <el-table-column label="设备UUID" align="center" prop="deviceUuid" /> -->
-            <el-table-column label="产品ID" align="center" prop="productId" />
-            <el-table-column label="产品名称" align="center" prop="productName" />
-            <el-table-column label="是否最新推送" align="center" prop="isNew" />
-            <el-table-column label="推送区域" width="220" align="center" prop="regionName" />
-            <el-table-column label="推送类型" align="center" prop="pushType" />
-            <el-table-column label="推送状态" align="center" prop="status" />
-            <el-table-column label="推送时间" align="center" prop="operateDate" width="180">
-                <template slot-scope="scope">
-                    <span>{{ parseTime(scope.row.operateDate) }}</span>
-                </template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-                <template slot-scope="scope">
-                    <el-button size="small " type="success" plain icon="el-icon-edit" @click="handleUpdate(scope.row)">
-                        详情</el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+        <!-- 搜索区域 -->
+        <div class="search-section">
+            <div class="search-box">
+                <i class="el-icon-search search-icon"></i>
+                <el-input
+                    v-model="queryParams.searchKey"
+                    placeholder="搜索关键字..."
+                    clearable
+                    @clear="handleQuery"
+                    @keyup.enter.native="handleQuery"
+                    class="search-input"
+                />
+                <button class="search-btn" @click="handleQuery">搜索</button>
+            </div>
+        </div>
 
-        <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageIndex"
-            :limit.sync="queryParams.pageSize" @pagination="getList" />
+        <!-- 表格区域 -->
+        <div class="table-section">
+            <div class="table-header">
+                <span class="table-title">推送记录</span>
+                <span class="table-count">共 {{ total }} 条记录</span>
+            </div>
 
-        <!-- 添加或修改参数配置对话框 -->
+            <div class="custom-table">
+                <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange" style="width: 100%">
+                    <el-table-column type="index" label="序号" width="80" align="center">
+                        <template slot-scope="scope">
+                            <span class="index-badge">{{ scope.$index + 1 }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="设备序列号" prop="deviceSerialNum" min-width="150" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="产品ID" prop="productId" min-width="100" align="center"></el-table-column>
+                    <el-table-column label="产品名称" prop="productName" min-width="150"></el-table-column>
+                    <el-table-column label="是否最新推送" prop="isNew" min-width="120" align="center"></el-table-column>
+                    <el-table-column label="推送区域" prop="regionName" min-width="180" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="推送类型" prop="pushType" min-width="120" align="center"></el-table-column>
+                    <el-table-column label="推送状态" prop="status" min-width="100" align="center">
+                        <template slot-scope="scope">
+                            <span class="status-tag" :class="scope.row.status === '成功' ? 'status-active' : 'status-inactive'">
+                                {{ scope.row.status }}
+                            </span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="推送时间" prop="operateDate" min-width="160" align="center">
+                        <template slot-scope="scope">
+                            <span>{{ parseTime(scope.row.operateDate) }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" fixed="right" width="100" align="center">
+                        <template slot-scope="scope">
+                            <div class="action-btns">
+                                <button class="action-icon edit" @click="handleUpdate(scope.row)" title="详情">
+                                    <i class="el-icon-view"></i>
+                                </button>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="pagination-wrapper">
+                <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="queryParams.pageIndex"
+                    :page-sizes="[10, 20, 50, 100]"
+                    :page-size="queryParams.pageSize"
+                    layout="total, sizes, prev, pager, next"
+                    :total="total"
+                    background
+                >
+                </el-pagination>
+            </div>
+        </div>
+
+        <!-- 详情对话框 -->
         <el-dialog title="详情" :visible.sync="open" width="900px" append-to-body>
             <div class="re-push">
-                <el-button size="small " type="danger" plain @click="openRePush">
+                <el-button size="small" type="danger" plain @click="openRePush">
                     重新推送</el-button>
             </div>
 
             <el-descriptions :column='2'>
                 <el-descriptions-item label="设备序列号">{{info.deviceSerialNum}}</el-descriptions-item>
-                <!-- <el-descriptions-item label="设备UUID">{{info.deviceUuid}}</el-descriptions-item> -->
                 <el-descriptions-item label="产品ID">{{info.productId}}</el-descriptions-item>
                 <el-descriptions-item label="产品名称">{{info.productName}}</el-descriptions-item>
                 <el-descriptions-item label="推送类型">{{info.pushType}}</el-descriptions-item>
@@ -117,6 +118,7 @@
                 <el-descriptions-item labelStyle="width:60px" label="返回结果">{{info.httpResult}}</el-descriptions-item>
             </el-descriptions>
         </el-dialog>
+
         <!-- 推送数据 -->
         <el-dialog title="推送数据" :visible.sync="isRePush" width="900px" append-to-body>
             <el-form ref="formRePush" :model="formRePush" :rules="rulesRePush" label-width="100px">
@@ -456,22 +458,278 @@ export default {
             // });
             this.getList()
         },
+        // 监听 pageSize 改变的事件
+        handleSizeChange(newSize) {
+            this.queryParams.pageSize = newSize;
+            this.getList();
+        },
+        // 监听 当前页码值 改变的事件
+        handleCurrentChange(newPage) {
+            this.queryParams.pageIndex = newPage;
+            this.getList();
+        },
     },
 };
 </script>
+
 <style scoped>
-.app-container {
-    background: #ffffff;
-    width: calc(100% - 24px - 24px);
-    height: calc(100vh - 60px - 24px - 24px);
-    margin: 24px auto;
-    overflow-y: hidden;
-    box-shadow: 0px 3px 19px 2px rgba(47, 47, 47, 0.06);
-    border-radius: 6px;
+/* 页面容器 */
+.page-container {
+    padding: 0;
 }
+
+/* 页面头部 */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.page-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #ffffff;
+}
+
+.page-icon.purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.page-title h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.page-title p {
+    font-size: 14px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.add-btn {
+    height: 44px;
+    padding: 0 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* 搜索区域 */
+.search-section {
+    background: #faf8f0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 4px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s ease;
+    max-width: 400px;
+}
+
+.search-box:focus-within {
+    border-color: #667eea;
+    background: #ffffff;
+}
+
+.search-icon {
+    font-size: 18px;
+    color: #94a3b8;
+    margin-left: 12px;
+}
+
+.search-input {
+    flex: 1;
+}
+
+.search-input >>> .el-input__inner {
+    border: none;
+    background: transparent;
+    height: 40px;
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.search-btn {
+    height: 40px;
+    padding: 0 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 表格区域 */
+.table-section {
+    background: #faf8f0;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.table-count {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.custom-table >>> .el-table {
+    background: transparent;
+}
+
+.custom-table >>> .el-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.custom-table >>> .el-table td {
+    font-size: 14px;
+    color: #475569;
+}
+
+.custom-table >>> .el-table--enable-row-hover .el-table__body tr:hover > td {
+    background: #f8fafc;
+}
+
+.index-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.action-btns {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-icon {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-icon.edit {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.action-icon.edit:hover {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.action-icon.delete {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.action-icon.delete:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+/* 分页 */
+.pagination-wrapper {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .re-push {
     position: absolute;
-    right: 10px;
-    top: 64px;
+    right: 60px;
+    top: 20px;
 }
 </style>
