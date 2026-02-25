@@ -1,99 +1,101 @@
 <template>
-  <div>
-    <!--Layout布局-->
-    <el-row>
-      <el-col :span="24">
-        <el-row :gutter="20">
-          <el-col :span="6">
-            <!--搜索区域-->
-            <el-input
-              placeholder="请输入内容"
-              v-model="queryInfo.keyword"
-              clearable
-              @clear="getUserList"
-            >
-              <el-button
-                slot="append"
-                icon="el-icon-search"
-                @click="getUserList"
-              ></el-button>
-            </el-input>
-          </el-col>
-          <el-col :span="2.5">
-            <el-button type="primary" @click="addDialogVisible = true"
-              >添加用户</el-button
-            >
-          </el-col>
-          <!-- <el-col :span="2.5">
-            <el-button type="danger" @click="batchDeleteUser"
-              >批量删除</el-button
-            >
-          </el-col> -->
-        </el-row>
-      </el-col>
-      <el-col :span="24">
-        <!--表格-->
-        <el-table
-          :data="userList"
-          border
-          @selection-change="handleSelectionChange"
-        >
-          <!-- <el-table-column type="selection" width="55"> </el-table-column> -->
-          <el-table-column type="index" label="序号" width="80"></el-table-column>
-          <el-table-column prop="userName" label="姓名"></el-table-column>
-          <el-table-column prop="loginName" label="登录名"></el-table-column>
-          <el-table-column prop="sex" label="性别">
+  <div class="page-container">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="page-icon purple">
+          <i class="el-icon-user"></i>
+        </div>
+        <div class="page-title">
+          <h2>用户管理</h2>
+          <p>管理系统用户信息及权限</p>
+        </div>
+      </div>
+      <button class="add-btn" @click="addDialogVisible = true">
+        <i class="el-icon-plus"></i> 添加用户
+      </button>
+    </div>
+
+    <!-- 搜索区域 -->
+    <div class="search-section">
+      <div class="search-box">
+        <i class="el-icon-search search-icon"></i>
+        <el-input
+          v-model="queryInfo.searchKey"
+          placeholder="搜索用户名..."
+          clearable
+          @clear="getUserList"
+          @keyup.enter.native="getUserList"
+          class="search-input"
+        />
+        <button class="search-btn" @click="getUserList">搜索</button>
+      </div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="table-section">
+      <div class="table-header">
+        <span class="table-title">用户列表</span>
+        <span class="table-count">共 {{ total }} 条记录</span>
+      </div>
+
+      <div class="custom-table">
+        <el-table :data="userList" style="width: 100%">
+          <el-table-column type="index" label="序号" width="80" align="center">
             <template slot-scope="scope">
-              {{ scope.row.sex ==="1"?'男':'女' }}
+              <span class="index-badge">{{ scope.$index + 1 }}</span>
             </template>
-            
           </el-table-column>
-          <el-table-column prop="email" label="邮箱"></el-table-column>
-          <el-table-column prop="address" label="地址"></el-table-column>
-          <el-table-column label="操作" fixed="right" width="150">
-            <!-- 作用域插槽 -->
+          <el-table-column prop="userName" label="姓名" min-width="120"></el-table-column>
+          <el-table-column prop="loginName" label="登录名" min-width="120"></el-table-column>
+          <el-table-column prop="sex" label="性别" width="80" align="center">
             <template slot-scope="scope">
-              <!--修改按钮-->
-              <el-button
-                type="primary"
-                size="mini"
-                icon="el-icon-edit"
-                @click="showEditDialog(scope.row)"
-              ></el-button>
-              <!--删除按钮-->
-              <el-button
-                type="danger"
-                size="mini"
-                icon="el-icon-delete"
-                @click="removeUserById(scope.row.id)"
-              ></el-button>
+              <span>{{ scope.row.sex === "1" ? '男' : '女' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip></el-table-column>
+          <el-table-column prop="address" label="地址" min-width="180" show-overflow-tooltip></el-table-column>
+          <el-table-column label="操作" fixed="right" width="120" align="center">
+            <template slot-scope="scope">
+              <div class="action-btns">
+                <button class="action-icon edit" @click="showEditDialog(scope.row)">
+                  <i class="el-icon-edit"></i>
+                </button>
+                <button class="action-icon delete" @click="removeUserById(scope.row.id)">
+                  <i class="el-icon-delete"></i>
+                </button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
-      </el-col>
-    </el-row>
-    <el-row>
-      <!--分页区域-->
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :current-page="queryInfo.pageNum"
-        :page-sizes="[1, 2, 5, 10]"
-        :page-size="queryInfo.pageSize"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-      >
-      </el-pagination>
-    </el-row>
+      </div>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+          :current-page="queryInfo.pageNum"
+          :page-sizes="[10, 20, 50, 100]"
+          :page-size="queryInfo.pageSize"
+          layout="total, sizes, prev, pager, next"
+          :total="total"
+          background
+        >
+        </el-pagination>
+      </div>
+    </div>
+
     <!--添加用户的对话框-->
     <el-dialog
       title="添加用户"
       :visible.sync="addDialogVisible"
       width="30%"
       @close="addDialogClosed"
+      :close-on-click-modal="false"
     >
       <!--内容主体区域-->
-      <el-form :model="userForm" label-width="70px">
+      <el-form :model="userForm" label-width="110px" ref="addFormRef">
         <el-form-item label="登录名" prop="loginName">
           <el-input v-model="userForm.loginName"></el-input>
         </el-form-item>
@@ -120,10 +122,11 @@
         <el-button type="primary" @click="addUser">确 定</el-button>
       </span>
     </el-dialog>
+
     <!--修改用户的对话框-->
-    <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="30%">
+    <el-dialog title="修改用户" :visible.sync="editDialogVisible" width="30%" :close-on-click-modal="false">
       <!--内容主体区域-->
-      <el-form :model="editForm" label-width="70px">
+      <el-form :model="editForm" label-width="110px">
         <el-form-item label="用户名" prop="userName">
           <el-input v-model="editForm.userName" :disabled="true"></el-input>
         </el-form-item>
@@ -264,7 +267,7 @@ export default {
         })
         .catch((err) => {
           this.$message.error("修改用户异常");
-          console.loge(err);
+          console.log(err); // 修复拼写错误 console.loge -> console.log
         });
     },
     // 根据ID删除对应的用户信息
@@ -350,15 +353,258 @@ export default {
 };
 </script>
 
-<style>
-.el-row {
+<style scoped>
+/* 页面容器 */
+.page-container {
+  padding: 0;
+}
+
+/* 页面头部 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 31px; /* 原28px +3 */
+  color: #ffffff;
+}
+
+.page-icon.purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.page-title h2 {
+  font-size: 27px; /* 原24px +3 */
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 4px 0;
+}
+
+.page-title p {
+  font-size: 17px; /* 原14px +3 */
+  color: #94a3b8;
+  margin: 0;
+}
+
+.add-btn {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 12px;
+  font-size: 17px; /* 原14px +3 */
+  font-weight: 500;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* 搜索区域 */
+.search-section {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 4px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  max-width: 400px;
+}
+
+.search-box:focus-within {
+  border-color: #667eea;
+  background: #ffffff;
+}
+
+.search-icon {
+  font-size: 21px; /* 原18px +3 */
+  color: #94a3b8;
+  margin-left: 12px;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.search-input >>> .el-input__inner {
+  border: none;
+  background: transparent;
+  height: 40px;
+  font-size: 17px; /* 原14px +3 */
+  color: #1e293b;
+}
+
+.search-btn {
+  height: 40px;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px; /* 原14px +3 */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 表格区域 */
+.table-section {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
 }
-.el-col {
-  border-radius: 4px;
+
+.table-title {
+  font-size: 21px; /* 原18px +3 */
+  font-weight: 600;
+  color: #1e293b;
 }
-/* .el-card {
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1) !important;
-  height: 60pt;
-} */
+
+.table-count {
+  color: #94a3b8;
+  font-size: 16px; /* 原13px +3 */
+}
+
+.custom-table >>> .el-table {
+  background: transparent;
+}
+
+.custom-table >>> .el-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 16px; /* 原13px +3 */
+}
+
+.custom-table >>> .el-table td {
+  font-size: 17px; /* 原14px +3 */
+  color: #475569;
+}
+
+.custom-table >>> .el-table--enable-row-hover .el-table__body tr:hover > td {
+  background: #f8fafc;
+}
+
+.index-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 16px; /* 原13px +3 */
+  font-weight: 600;
+  color: #64748b;
+}
+
+.action-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px; /* 原14px +3 */
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-icon.edit {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.action-icon.edit:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.action-icon.delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.action-icon.delete:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+</style>
+
+<!-- 全局放大Element UI组件内置文字 -->
+<style>
+.el-pagination, .el-dialog, .el-form, .el-descriptions {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-descriptions-item__label, .el-descriptions-item__content {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-dialog__title {
+  font-size: 20px !important; /* 原17px +3 */
+}
+.el-form-item__label, .el-input__inner, .el-button {
+  font-size: 17px !important; /* 原14px +3 */
+}
+.el-date-picker {
+  font-size: 17px !important; /* 原14px +3 */
+}
 </style>
