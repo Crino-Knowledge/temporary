@@ -1,663 +1,713 @@
 <template>
-  <div class="home-content">
-      <div class="tab-list-box flex_row_start_center">
-          <div class="tab-list" v-for="item in tabList" :key="item.title">
-              <div class="flex_column_center_start cf list-box">
-                <span class="tab-list-num mb fs40">{{item.num}}</span>
-                <span class="tab-list-text fs16 cBBBCBD">{{item.title}}</span>
-              </div>
+  <div class="dashboard-content">
+    <!-- 统计卡片行 -->
+    <div class="stats-row">
+      <div class="stat-card" style="--card-color: #667eea;">
+        <div class="stat-icon">
+          <i class="el-icon-box"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">18</span>
+          <span class="stat-label">算法模型个数</span>
+        </div>
+        <div class="stat-trend">+5%</div>
+      </div>
+      <div class="stat-card" style="--card-color: #764ba2;">
+        <div class="stat-icon">
+          <i class="el-icon-coin"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">106</span>
+          <span class="stat-label">计算任务总数</span>
+        </div>
+        <div class="stat-trend">+12%</div>
+      </div>
+      <div class="stat-card" style="--card-color: #f093fb;">
+        <div class="stat-icon">
+          <i class="el-icon-video-play"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">35</span>
+          <span class="stat-label">正在运行任务</span>
+        </div>
+        <div class="stat-trend">+8%</div>
+      </div>
+      <div class="stat-card" style="--card-color: #f5576c;">
+        <div class="stat-icon">
+          <i class="el-icon-bell"></i>
+        </div>
+        <div class="stat-content">
+          <span class="stat-value">3179</span>
+          <span class="stat-label">历史告警次数</span>
+        </div>
+        <div class="stat-trend">+3%</div>
+      </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="header-icon purple">
+              <i class="el-icon-monitor"></i>
+            </div>
+            <div class="header-text">
+              <h3>系统资源监控</h3>
+              <p>实时性能数据</p>
+            </div>
           </div>
-      </div>
-      <div class="home-bottom-box flex_row_start_start">
-        <div class="home-bottom-left flex_column_start_start">
-            <div class="memory-information">
-              <div id="memory-info"></div>
-              <div class="memory-title-box flex_row_start_center">
-                <span class="memory-line"></span>
-                <span class="memory-title cf ml10">内存信息</span>
-              </div>
-              <span class="memory-time">2024.09.29 17:20:00更新</span>
-            </div>
-            <div class="memory-information flex_row_between_center">
-              <div class="memory-title-box flex_row_start_center">
-                <span class="memory-line"></span>
-                <span class="memory-title cf ml10">CPU/GPU信息</span>
-              </div>
-              <span class="memory-time">2024.09.29 17:20:00更新</span>
-              <!-- <div class="flex_row_between_center cf memory-time">
-                <span>2024.09.29 17:20:00更新</span>
-                <span>2024.09.29 17:20:00更新</span>
-              </div> -->
-              <div class="cpu-information" id="cpu-info"></div>
-              <div class="gpu-information" id="gpu-info"></div>
-            </div>
+          <span class="update-time">更新于 2026-02-23 10:30:00</span>
         </div>
-        <div class="home-bottom-center">
-            <div class="memory-title-box flex_row_start_center">
-                  <span class="memory-line"></span>
-                  <span class="memory-title cf ml10">近一月告警占比</span>
-            </div>
-            <span class="memory-time-center">2024.09.29 17:20:00更新</span>
-            <div id="alarm-pie"></div>
-            <div class="flex_column_start_start legend-box">
-              <div class="flex_row_start_center mb10" v-for="(item,index) in alarmNameList" :key="item.name">
-                <span class="alarm-color mr10" :style="{backgroundColor:colorList[index]}"></span>
-                <span class="alarm-name mr10">{{item.name}}</span>
-                <span class="alarm-num mr10">{{item.value}}</span>
-                <span class="alarm-num"></span>
-              </div>
-            </div>
-        </div>
-        <div class="home-bottom-right">
-            <div class="memory-title-box flex_row_start_center">
-                  <span class="memory-line"></span>
-                  <span class="memory-title cf ml10">告警信息</span>
-            </div>
-            <div class="flex_row_start_center alarm-list-title">
-              <span>序号</span>
-              <span>告警类型</span>
-              <span>告警时间</span>
-              <span>客户名称</span>
-            </div>
-            <div class="flex_row_start_center alarm-list" v-for="(item,index) in alarmList" :key="item.id">
-              <span>{{index<9?'0'+(index+1):index+1}}</span>
-              <span>{{item.modelName}}</span>
-              <span>{{item.alarmDate}}</span>
-              <span>{{item.customerName}}</span>
-            </div>
+        <div class="gauge-charts">
+          <div class="gauge-item">
+            <div id="memory-gauge" class="gauge-chart"></div>
+            <span class="gauge-label">内存使用率</span>
+          </div>
+          <div class="gauge-item">
+            <div id="cpu-gauge" class="gauge-chart"></div>
+            <span class="gauge-label">CPU使用率</span>
+          </div>
+          <div class="gauge-item">
+            <div id="gpu-gauge" class="gauge-chart"></div>
+            <span class="gauge-label">GPU使用率</span>
+          </div>
         </div>
       </div>
+
+      <div class="chart-card">
+        <div class="card-header">
+          <div class="header-left">
+            <div class="header-icon orange">
+              <i class="el-icon-pie-chart"></i>
+            </div>
+            <div class="header-text">
+              <h3>告警类型分布</h3>
+              <p>近30天数据统计</p>
+            </div>
+          </div>
+          <span class="update-time">更新于 2026-02-23 10:30:00</span>
+        </div>
+        <div class="pie-content">
+          <div id="alarm-pie" class="pie-chart"></div>
+          <div class="pie-legend">
+            <div class="legend-item" v-for="(item, index) in alarmNameList" :key="item.name">
+              <span class="legend-dot" :style="{background: colorList[index]}"></span>
+              <span class="legend-name">{{item.name}}</span>
+              <span class="legend-value">{{item.value}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 告警列表 -->
+    <div class="alarm-section">
+      <div class="section-header">
+        <div class="header-left">
+          <div class="header-icon alarm">
+            <i class="el-icon-warning"></i>
+          </div>
+          <div class="header-text">
+            <h3>最新告警</h3>
+            <p>实时告警信息</p>
+          </div>
+        </div>
+        <el-button type="primary" plain size="small" icon="el-icon-refresh" @click="getAlarmList">
+          刷新
+        </el-button>
+      </div>
+
+      <div class="alarm-table">
+        <div class="alarm-table-header">
+          <span class="col-index">序号</span>
+          <span class="col-type">告警类型</span>
+          <span class="col-time">告警时间</span>
+          <span class="col-customer">客户名称</span>
+          <span class="col-status">状态</span>
+        </div>
+
+        <div class="alarm-item" v-for="(item, index) in alarmList" :key="item.id">
+          <span class="col-index">
+            <span class="index-badge" :class="{ top: index < 3 }">
+              {{index < 9 ? '0' + (index + 1) : index + 1}}
+            </span>
+          </span>
+          <span class="col-type">
+            <i class="el-icon-warning-outline alarm-icon"></i>
+            {{item.modelName}}
+          </span>
+          <span class="col-time">{{item.alarmDate}}</span>
+          <span class="col-customer">{{item.customerName}}</span>
+          <span class="col-status">
+            <span class="status-tag" :class="{ unhandled: index < 3 }">
+              {{index < 3 ? '未处理' : '已处理'}}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import * as echarts from 'echarts';
-import { listPage as getAlarmListPage} from "@/api/alarmData";
+import { listPage as getAlarmListPage } from "@/api/alarmData";
+
 export default {
   data() {
     return {
-        colorList:['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'],
-        memoryInfoEchart:null,
-        cpuInfoEchart:null,
-        gpuInfoEchart:null,
-        alarmEchart:null,
-        tabList: [
-          {
-            title: "算法模型个数",
-            num: "18",
-            url: "../../assets/home/bg1@2x.png",
-          },
-          {
-            title: "计算任务总数",
-            num: "106",
-            url: "../../assets/home/bg2@2x.png",
-          },
-          {
-            title: "正在运行任务数量",
-            num: "35",
-            url: "../../assets/home/bg3@2x.png",
-          },
-          {
-            title: "历史告警次数",
-            num: "3179",
-            url: "../../assets/home/bg4@2x.png",
-          },
-        ],
-        alarmList:[],
-        alarmNameList:[ { value: 1048, name: '裸土砂石告警' },
-              { value: 735, name: '秸秆燃烧告警' },
-              { value: 580, name: '车牌识别' },
-              { value: 484, name: '河道漂浮物' },
-              { value: 300, name: '城市流动摊贩' },
-              { value: 200, name: '其他告警' }]
+      colorList: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'],
+      memoryGauge: null,
+      cpuGauge: null,
+      gpuGauge: null,
+      alarmEchart: null,
+      alarmList: [],
+      alarmNameList: [
+        { value: 1048, name: '裸土砂石告警' },
+        { value: 735, name: '秸秆燃烧告警' },
+        { value: 580, name: '车牌识别' },
+        { value: 484, name: '河道漂浮物' },
+        { value: 300, name: '城市流动摊贩' },
+        { value: 200, name: '其他告警' }
+      ]
     }
   },
-  mounted(){
-    this.memoryInfoEchart = echarts.init(document.getElementById("memory-info"));
-    this.cpuInfoEchart = echarts.init(document.getElementById("cpu-info"));
-    this.gpuInfoEchart = echarts.init(document.getElementById("gpu-info")); 
-    this.alarmEchart = echarts.init(document.getElementById("alarm-pie")); 
-    this.initMemoryInforEchart()
-    this.initCpuInforEchart()
-    this.initGpuInforEchart()
-    this.initAlarmEchart()
-    this.getAlarmList()
+  mounted() {
+    this.initCharts();
+    this.getAlarmList();
+    window.addEventListener('resize', this.handleResize);
   },
-  methods:{
-    initMemoryInforEchart(){
-      this.memoryInfoEchart.setOption({
-        tooltip: {
-            formatter: '{a} <br/>{b} : {c}%'
+  beforeDestroy() {
+    window.removeEventListener('resize', this.handleResize);
+    if (this.memoryGauge) this.memoryGauge.dispose();
+    if (this.cpuGauge) this.cpuGauge.dispose();
+    if (this.gpuGauge) this.gpuGauge.dispose();
+    if (this.alarmEchart) this.alarmEchart.dispose();
+  },
+  methods: {
+    initCharts() {
+      // 内存使用率仪表盘
+      this.memoryGauge = echarts.init(document.getElementById('memory-gauge'));
+      this.memoryGauge.setOption({
+        series: [{
+          type: 'gauge',
+          radius: '90%',
+          startAngle: 90,
+          endAngle: -270,
+          pointer: { show: false },
+          progress: {
+            show: true,
+            overlap: false,
+            roundCap: true,
+            clip: false,
+            itemStyle: { color: '#667eea' }
           },
-          series: [
-            {
-              name: '',
-              type: 'gauge',
-              pointer:{
-                show: false
-              },
-              detail: {
-                show:true,
-                color: '#ffffff',
-                fontFamily:"DIN",
-                fontSize:40,
-                lineHeight:100,
-                backgroundColor:{
-                  type: 'radial',
-                    x: 0.5,
-                    y: 0.5,
-                    r: 0.5,
-                    colorStops: [{
-                        offset: 0.7, color: '#1D2029' // 0% 处的颜色
-                    }, {
-                        offset: 1, color: '#212C4A' // 100% 处的颜色
-                    }],
-                    global: false // 缺省为 false
-                  },
-                valueAnimation: true,
-                formatter: '{value}%',
-                width:130,
-                height:140,  
-                borderRadius:150,
-                borderWidth:1,
-                borderColor:'#212C4A',
-                offsetCenter:['0','0'],
-              },
-              progress:{
-                show: true,
-                roundCap:true,
-                itemStyle:{
-                  color: '#4660FF',
-                  // shadowColor: 'rgba(0,138,255,0.45)',
-                  
-                }
-              },
-              axisLine:{
-                show: true,
-                roundCap:true,
-                lineStyle:{
-                  color: [[1,'#363947']],
-                  // shadowColor: 'rgba(0,138,255,0.45)',
-                  
-                }
-              },
-              axisLabel:{
-                show:false
-              },
-              data: [
-                {
-                  value: 50,
-                  name: '内存占用率',
-                  title:{
-                    show:true,
-                    color: '#BBBCBD',
-                    fontSize: 16,
-                    offsetCenter:['0','100%'],
-                  }
-                }
-              ]
-            }
-          ]
-        });
-    },
-    initCpuInforEchart(){
-      this.cpuInfoEchart.setOption({
-        tooltip: {
-            formatter: '{a} <br/>{b} : {c}%'
-          },
-          series: [
-            {
-              name: '',
-              type: 'gauge',
-              pointer:{
-                show: false
-              },
-              detail: {
-                show:true,
-                color: '#ffffff',
-                fontFamily:"DIN",
-                fontSize:40,
-                lineHeight:100,
-                backgroundColor:{
-                  type: 'radial',
-                    x: 0.5,
-                    y: 0.5,
-                    r: 0.5,
-                    colorStops: [{
-                        offset: 0.7, color: '#1D2029' // 0% 处的颜色
-                    }, {
-                        offset: 1, color: '#212C4A' // 100% 处的颜色
-                    }],
-                    global: false // 缺省为 false
-                  },
-                valueAnimation: true,
-                formatter: '{value}%',
-                width:100,
-                height:110,  
-                borderRadius:150,
-                borderWidth:1,
-                borderColor:'#212C4A',
-                offsetCenter:['0','0'],
-              },
-              progress:{
-                show: true,
-                roundCap:true,
-                itemStyle:{
-                  color: {
-                    type: 'linear',
-                    x: 0,
-                    y: 0,
-                    colorStops: [{
-                        offset: 0.3, color: '#457FFF' // 0% 处的颜色
-                    }, 
-                    {
-                        offset: .6, color: '#21B9D9' // 100% 处的颜色
-                    },
-                    {
-                        offset: 1, color: '#ED5D11' // 100% 处的颜色
-                    }
-                  ],
-                  },
-                }
-              },
-              axisLine:{
-                show: true,
-                roundCap:true,
-                lineStyle:{
-                  color: [[1,'#363947']],
-                }
-              },
-              axisLabel:{
-                show:false
-              },
-              data: [
-                {
-                  value: 50,
-                  name: 'CPU内存占用率',
-                  title:{
-                    show:true,
-                    color: '#BBBCBD',
-                    fontSize: 16,
-                    offsetCenter:['0','100%'],
-                  }
-                }
-              ]
-            }
-          ]
-        });
-    },
-    initGpuInforEchart(){
-      this.gpuInfoEchart.setOption({
-        tooltip: {
-            formatter: '{a} <br/>{b} : {c}%'
-          },
-          series: [
-            {
-              name: '',
-              type: 'gauge',
-              pointer:{
-                show: false
-              },
-              detail: {
-                show:true,
-                color: '#ffffff',
-                fontFamily:"DIN",
-                fontSize:40,
-                lineHeight:100,
-                backgroundColor:{
-                  type: 'radial',
-                    x: 0.5,
-                    y: 0.5,
-                    r: 0.5,
-                    colorStops: [{
-                        offset: 0.7, color: '#1D2029' // 0% 处的颜色
-                    }, {
-                        offset: 1, color: '#212C4A' // 100% 处的颜色
-                    }],
-                    global: false // 缺省为 false
-                  },
-                valueAnimation: true,
-                formatter: '{value}%',
-                width:100,
-                height:110,  
-                borderRadius:150,
-                borderWidth:1,
-                borderColor:'#212C4A',
-                offsetCenter:['0','0'],
-              },
-              progress:{
-                show: true,
-                roundCap:true,
-                itemStyle:{
-                  color: {
-                    type: 'linear',
-                    x: 0,
-                    y: 0,
-                    colorStops: [{
-                        offset: 0.3, color: '#457FFF' // 0% 处的颜色
-                    }, 
-                    {
-                        offset: .6, color: '#21B9D9' // 100% 处的颜色
-                    },
-                    {
-                        offset: 1, color: '#ED5D11' // 100% 处的颜色
-                    }
-                  ],
-                  },
-                }
-              },
-              axisLine:{
-                show: true,
-                roundCap:true,
-                lineStyle:{
-                  color: [[1,'#363947']],
-                  // shadowColor: 'rgba(0,138,255,0.45)',
-                  
-                }
-              },
-              axisLabel:{
-                show:false
-              },
-              data: [
-                {
-                  value: 90,
-                  name: 'GPU内存占用率',
-                  title:{
-                    show:true,
-                    color: '#BBBCBD',
-                    fontSize: 16,
-                    offsetCenter:['0','100%'],
-                  }
-                }
-              ]
-            }
-          ]
-        });
-    },
-    initAlarmEchart(){
-      this.alarmEchart.setOption({
-        tooltip: {
-          show:true,
-          trigger: 'item'
-        },
-        legend: {
-          show:false,
-          bottom: 0,
-          left: 'center',
-          orient:"vertical",
-          itemGap:20,
-          textStyle :{
-            color:"#7D7E81"
-          },
-          formatter: '{name}'
-        },
-        title:{
-          text:"3347",
-          textStyle:{
-            color:"#ffffff",
-            fontSize:40,
-            fontFamily:"DIN"
-          },         
-          subtext:"告警总次数",
-          subtextStyle:{
-            color:"#7D7E81",
-            fontSize:16,
-          },
-          left: 'center',
-          top: 'center',
-
-        },
-       
-        series: [
-          {
-            name: '告警总次数',
-            type: 'pie',
-            radius: ['50%', '72%'],
-            avoidLabelOverlap: false,
-            label: {
-              show: false,
-              position: 'center'
-            },
-            labelLine: {
-              show: false
-            },
-            data: [
-              { value: 1048, name: '裸土砂石告警' },
-              { value: 735, name: '秸秆燃烧告警' },
-              { value: 580, name: '车牌识别' },
-              { value: 484, name: '河道漂浮物' },
-              { value: 300, name: '城市流动摊贩' },
-              { value: 200, name: '其他告警' }
-            ]
-          },
-           // 外边框虚线
-            {
-              name:"外边框",
-              type: 'pie',
-              zlevel: 4,
-              // silent: true,
-              hoverAnimation: false, //鼠标移入变大
-              radius: ['78%', '72%'], // 外层圆环半径
-              center: ['50%', '50%'], // 控制外层圆环位置，和内层一致即可
-              // 禁用外层圆环 label 样式
-              label: {
-                normal: {
-                  show: false
-                }
-              },
-              tooltip: {
-                show:false
-              },
-              labelLine: {
-                normal: {
-                  show: false
-                }
-              },
-              // 自定义外层圆环数据
-              data: [{
-                value: 1,
-                itemStyle:{
-                  color:"#34373F",
-                }
-                
-              }]
-            },
-             // 内边框虚线
-             {
-              name:"外边框",
-              type: 'pie',
-              zlevel: 4,
-              // silent: true,
-              hoverAnimation: false, //鼠标移入变大
-              radius: ['43%', '50%'], // 外层圆环半径
-              center: ['50%', '50%'], // 控制外层圆环位置，和内层一致即可
-              // 禁用外层圆环 label 样式
-              label: {
-                normal: {
-                  show: false
-                }
-              },
-              tooltip: {
-                show:false
-              },
-              labelLine: {
-                normal: {
-                  show: false
-                }
-              },
-              // 自定义外层圆环数据
-              data: [{
-                value: 1,
-                itemStyle:{
-                  color:"#292B34",
-                }
-                
-              }]
-            }
-        ]
-      })
-    },
-    getAlarmList(){
-      getAlarmListPage({
-        pageNum: 1, // 当前页码
-        pageSize: 20, //页面大小
-      }).then(res=>{
-        this.loadingTable = false
-          if (res.data.code === 200) {
-            this.alarmList = res.data.data.list;
+          axisLine: { lineStyle: { width: 12, color: [[1, '#e2e8f0']] } },
+          splitLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          data: [{ value: 50, detail: { offsetCenter: ['0%', '0%'] } }],
+          detail: {
+            width: 60,  // 增加宽度避免文字溢出
+            height: 18, // 增加高度
+            fontSize: 31,  // 原28 +3
+            color: '#1e293b',
+            formatter: '{value}%',
+            fontWeight: 'bold'
           }
-      })
+        }]
+      });
+
+      // CPU使用率仪表盘
+      this.cpuGauge = echarts.init(document.getElementById('cpu-gauge'));
+      this.cpuGauge.setOption({
+        series: [{
+          type: 'gauge',
+          radius: '90%',
+          startAngle: 90,
+          endAngle: -270,
+          pointer: { show: false },
+          progress: {
+            show: true,
+            overlap: false,
+            roundCap: true,
+            clip: false,
+            itemStyle: { color: '#764ba2' }
+          },
+          axisLine: { lineStyle: { width: 12, color: [[1, '#e2e8f0']] } },
+          splitLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          data: [{ value: 65, detail: { offsetCenter: ['0%', '0%'] } }],
+          detail: {
+            width: 60,  // 增加宽度避免文字溢出
+            height: 18, // 增加高度
+            fontSize: 31,  // 原28 +3
+            color: '#1e293b',
+            formatter: '{value}%',
+            fontWeight: 'bold'
+          }
+        }]
+      });
+
+      // GPU使用率仪表盘
+      this.gpuGauge = echarts.init(document.getElementById('gpu-gauge'));
+      this.gpuGauge.setOption({
+        series: [{
+          type: 'gauge',
+          radius: '90%',
+          startAngle: 90,
+          endAngle: -270,
+          pointer: { show: false },
+          progress: {
+            show: true,
+            overlap: false,
+            roundCap: true,
+            clip: false,
+            itemStyle: { color: '#f093fb' }
+          },
+          axisLine: { lineStyle: { width: 12, color: [[1, '#e2e8f0']] } },
+          splitLine: { show: false },
+          axisTick: { show: false },
+          axisLabel: { show: false },
+          data: [{ value: 80, detail: { offsetCenter: ['0%', '0%'] } }],
+          detail: {
+            width: 60,  // 增加宽度避免文字溢出
+            height: 18, // 增加高度
+            fontSize: 31,  // 原28 +3
+            color: '#1e293b',
+            formatter: '{value}%',
+            fontWeight: 'bold'
+          }
+        }]
+      });
+
+      // 告警类型饼图
+      this.alarmEchart = echarts.init(document.getElementById('alarm-pie'));
+      this.alarmEchart.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+          name: '告警类型',
+          type: 'pie',
+          radius: ['45%', '70%'],
+          center: ['50%', '50%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 8,
+            borderColor: '#fff',
+            borderWidth: 2
+          },
+          label: { show: false },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 17,  // 原14 +3
+              fontWeight: 'bold'
+            }
+          },
+          labelLine: { show: false },
+          data: this.alarmNameList.map((item, index) => ({
+            ...item,
+            itemStyle: { color: this.colorList[index] }
+          }))
+        }]
+      });
+    },
+    handleResize() {
+      if (this.memoryGauge) this.memoryGauge.resize();
+      if (this.cpuGauge) this.cpuGauge.resize();
+      if (this.gpuGauge) this.gpuGauge.resize();
+      if (this.alarmEchart) this.alarmEchart.resize();
+    },
+    getAlarmList() {
+      getAlarmListPage({
+        pageNum: 1,
+        pageSize: 5,
+      }).then(res => {
+        if (res.data.code === 200) {
+          this.alarmList = res.data.data.list.slice(0, 5);
+        }
+      }).catch(() => {
+        // 使用模拟数据
+        this.alarmList = [
+          { id: 1, modelName: '车牌识别异常', alarmDate: '2026-02-23 10:28:15', customerName: '万达广场停车场' },
+          { id: 2, modelName: '设备离线', alarmDate: '2026-02-23 10:25:42', customerName: '国贸中心停车场' },
+          { id: 3, modelName: '存储空间不足', alarmDate: '2026-02-23 10:20:18', customerName: '科技园停车场' },
+          { id: 4, modelName: '网络延迟过高', alarmDate: '2026-02-23 10:15:33', customerName: '体育中心停车场' },
+          { id: 5, modelName: '摄像头遮挡', alarmDate: '2026-02-23 10:10:09', customerName: '医院停车场' }
+        ];
+      });
     }
   }
 };
 </script>
+
 <style scoped>
-.legend-box{
-  position: absolute;
-  left: 50%;
-  bottom: 15%;
-  transform: translateX(-50%);
+.dashboard-content {
+  padding: 0;
 }
-.alarm-name{
-  color: #78797D;
-}
-.alarm-num{
-  color:#B4B4B6;
-}
-.alarm-color{
-  width: 16px;
-  height: 16px;
-  background: #4378F3;
-  border-radius: 1px;
-}
-.tab-list{
-  width: 400px;
-  height: 180px;
-  margin-right: 24px;
-  position: relative;
-}
-.tab-list:nth-child(1){
-  background: url('../../assets/home/bg1@2x.png') no-repeat;
-  background-size: 100% 100%;
-}
-.tab-list:nth-child(2){
-  background: url('../../assets/home/bg2@2x.png') no-repeat;
-  background-size: 100% 100%;
-}
-.tab-list:nth-child(3){
-  background: url('../../assets/home/bg3@2x.png') no-repeat;
-  background-size: 100% 100%;
-}
-.tab-list:nth-child(4){
-  background: url('../../assets/home/bg4@2x.png') no-repeat;
-  background-size: 100% 100%;
-}
-.tab-list-num{
-  font-family: 'DIN';
-}
-.list-box{
-  position: absolute;
-  left: 40px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.home-bottom-box{
-  margin-top: 24px;
-}
-.memory-information{
-  width: 510px;
-  height: 362px;
-  background: #1D2029;
-  border-radius: 2px;
+
+/* 统计卡片 */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   margin-bottom: 24px;
-  position: relative;
 }
-.memory-title-box{
-  position: absolute;
-  left: 20px;
-  top: 20px;
-}
-.memory-line{
-  width: 3px;
-  height: 16px;
-  background: #4378F3;
-  border-radius: 2px;
-}
-.memory-time{
-  color: #78797D;
-  position: absolute;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%);
-  font-size: 16px;
-}
-.memory-time-center{
-  color: #78797D;
-  position: absolute;
-  right: 20px;
-  top: 20px;
-  font-size: 16px;
-}
-.memory-information:last-child{
-  margin-bottom: 0;
-}
-.home-bottom-center{
-  width: 560px;
-  height: 748px;
-  /* height: 100%; */
-  border-radius: 2px;
-  background: #1D2029;
-  margin: 0 24px;
-  position: relative;
-}
-.home-bottom-right{
-  width: 554px;
-  height: 748px;
-  /* height: 100%; */
-  border-radius: 2px;
-  background: #1D2029;
+
+.stat-card {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  min-height: 120px; /* 增加最小高度避免内容溢出 */
 }
-.cpu-information,.gpu-information{
-  width: 400px;
-  height: 300px;
-}
-#memory-info{
-  width: 400px;
-  height: 300px;
+
+.stat-card::before {
+  content: '';
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translateX(-50%) translateY(-50%);
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--card-color, #667eea);
 }
-#alarm-pie{
-  width: 400px;
-  height: 400px;
-  position: absolute;
-  left: 50%;
-  top: 5%;
-  transform: translateX(-50%);
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
 }
-.alarm-list-title{
-  width: 95%;
-  height: 30px;
-  background: #303441;
-  color: #BBBCBD;
-  font-size: 14px;
-  margin: 0 auto;
-  margin-top: 10%;
+
+.stat-icon {
+  width: 60px;  /* 原56 +4 适配更大字体 */
+  height: 60px; /* 原56 +4 适配更大字体 */
+  border-radius: 14px;
+  background: var(--card-color, #667eea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 31px; /* 原28 +3 */
+  color: #ffffff;
+}
+
+.stat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 35px; /* 原32 +3 */
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.1; /* 调整行高避免溢出 */
+}
+
+.stat-label {
+  font-size: 17px; /* 原14 +3 */
+  color: #64748b;
+  margin-top: 8px; /* 增加间距 */
+}
+
+.stat-trend {
+  font-size: 16px; /* 原13 +3 */
+  color: #10b981;
+  font-weight: 600;
+  white-space: nowrap; /* 防止换行 */
+}
+
+/* 图表区域 */
+.charts-row {
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
 }
-.alarm-list{
-  width: 95%;
-  height: 50px;
-  border-bottom: 1px dotted #303441;
-  color: #BBBCBD;
-  font-size: 14px;
-  margin: 0 auto;
+
+.chart-card {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px; /* 增加间距 */
+  flex-wrap: wrap; /* 防止小屏幕下重叠 */
+  gap: 10px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* 增加间距 */
+}
+
+.header-icon {
+  width: 48px; /* 原44 +4 适配更大字体 */
+  height: 48px; /* 原44 +4 适配更大字体 */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px; /* 原22 +3 */
+  color: #ffffff;
+}
+
+.header-icon.purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.header-icon.orange {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.header-icon.alarm {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+}
+
+.header-text h3 {
+  font-size: 21px; /* 原18 +3 */
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 6px 0; /* 增加间距 */
+}
+
+.header-text p {
+  font-size: 16px; /* 原13 +3 */
+  color: #94a3b8;
+  margin: 0;
+}
+
+.update-time {
+  font-size: 15px; /* 原12 +3 */
+  color: #94a3b8;
+  white-space: nowrap; /* 防止换行 */
+}
+
+/* 仪表盘 */
+.gauge-charts {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 0;
+  flex-wrap: wrap; /* 响应式适配 */
+  gap: 20px;
+}
+
+.gauge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 160px; /* 增加最小宽度 */
+}
+
+.gauge-chart {
+  width: 150px; /* 原140 +10 适配更大字体 */
+  height: 150px; /* 原140 +10 适配更大字体 */
+}
+
+.gauge-label {
+  font-size: 16px; /* 原13 +3 */
+  color: #64748b;
+  margin-top: 15px; /* 增加间距 */
+  white-space: nowrap;
+}
+
+/* 饼图 */
+.pie-content {
+  display: flex;
+  align-items: center;
+  gap: 28px; /* 增加间距 */
+  flex-wrap: wrap; /* 响应式适配 */
+  justify-content: center;
+}
+
+.pie-chart {
+  width: 210px; /* 原200 +10 适配更大字体 */
+  height: 210px; /* 原200 +10 适配更大字体 */
+}
+
+.pie-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* 原12 +3 */
+  min-width: 200px; /* 增加最小宽度 */
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 原10 +2 */
+  font-size: 16px; /* 原13 +3 */
+}
+
+.legend-dot {
+  width: 14px; /* 原12 +2 */
+  height: 14px; /* 原12 +2 */
+  border-radius: 4px; /* 原3 +1 */
+}
+
+.legend-name {
+  color: #64748b;
+  flex: 1;
+}
+
+.legend-value {
+  color: #1e293b;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 告警列表 */
+.alarm-section {
+  background: #faf8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px; /* 原20 +4 */
+  flex-wrap: wrap; /* 防止小屏幕下重叠 */
+  gap: 10px;
+}
+
+.alarm-table {
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.alarm-table-header {
   display: grid;
-  grid-template-columns: 80px 1fr 1fr 1fr;
+  grid-template-columns: 90px 2fr 1.5fr 1.5fr 110px; /* 增加列宽 */
+  gap: 20px; /* 原16 +4 */
+  padding: 16px 20px; /* 原14 +2 */
+  background: #f8fafc;
+  font-size: 16px; /* 原13 +3 */
+  font-weight: 600;
+  color: #64748b;
+}
+
+.alarm-item {
+  display: grid;
+  grid-template-columns: 90px 2fr 1.5fr 1.5fr 110px; /* 增加列宽 */
+  gap: 20px; /* 原16 +4 */
+  padding: 16px 20px; /* 原14 +2 */
+  border-top: 1px solid #f1f5f9;
+  font-size: 17px; /* 原14 +3 */
+  align-items: center;
+  color: #475569;
+}
+
+.alarm-item:hover {
+  background: #f8fafc;
+}
+
+.index-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* 原28 +4 */
+  height: 32px; /* 原28 +4 */
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 16px; /* 原13 +3 */
+  font-weight: 600;
+  color: #64748b;
+}
+
+.index-badge.top {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: #ffffff;
+}
+
+.alarm-icon {
+  color: #f59e0b;
+  margin-right: 6px; /* 原4 +2 */
+  font-size: 18px; /* 增加图标大小 */
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px; /* 原4+2, 12+2 */
+  border-radius: 20px;
+  font-size: 15px; /* 原12 +3 */
+  font-weight: 500;
+  background: #dcfce7;
+  color: #166534;
+  white-space: nowrap;
+}
+
+.status-tag.unhandled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+  .alarm-table-header,
+  .alarm-item {
+    grid-template-columns: 70px 1.5fr 1fr 90px; /* 调整移动端列宽 */
+    gap: 15px;
+  }
+  .col-customer {
+    display: none;
+  }
+  .gauge-item {
+    min-width: 140px;
+  }
+  .gauge-chart {
+    width: 140px;
+    height: 140px;
+  }
+  .pie-chart {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-card {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+  }
+  .stat-trend {
+    margin-top: 10px;
+  }
+  .header-left {
+    flex-direction: column;
+    text-align: center;
+  }
+  .header-text {
+    text-align: center;
+  }
 }
 </style>
