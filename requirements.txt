@@ -1,0 +1,7 @@
+# Excel 在线编辑平台 — 运行时依赖
+# 安装命令：pip install -r requirements.txt
+
+flask>=2.0.0
+
+# 打包工具（仅构建时需要，运行时不需要）
+# pyinstaller>=5.0.0

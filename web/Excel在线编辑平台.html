@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=1440, initial-scale=1.0" name="viewport"/>
+<title>Excel 在线编辑平台</title>
+<script src="lib/tailwind.min.js"></script>
+<script src="lib/iconify.min.js"></script>
+<script src="lib/xlsx.full.min.js"></script>
+<style>
+  /* ─── 滚动条 ─── */
+  .spreadsheet-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+  .spreadsheet-wrap::-webkit-scrollbar-track { background: #F5F7FA; }
+  .spreadsheet-wrap::-webkit-scrollbar-thumb { background: #D9D9D9; border-radius: 4px; }
+  .spreadsheet-wrap::-webkit-scrollbar-thumb:hover { background: #BFBFBF; }
+  .spreadsheet-wrap::-webkit-scrollbar-corner { background: #F5F7FA; }
+
+  /* ─── 表格基础 ─── */
+  #ss-table { border-collapse: collapse; table-layout: fixed; }
+  #ss-table td, #ss-table th { box-sizing: border-box; }
+
+  /* ─── 列头 ─── */
+  .col-th {
+    position: sticky; top: 0; z-index: 12;
+    background: #FAFAFA;
+    border-right: 1px solid #E8E8E8;
+    border-bottom: 2px solid #D9D9D9;
+    font-size: 12px; font-weight: 500;
+    color: #8C8C8C; text-align: center;
+    user-select: none; height: 28px;
+  }
+  .col-th.corner { left: 0; z-index: 20; width: 50px; min-width: 50px; }
+
+  /* ─── 行头 ─── */
+  .row-th {
+    position: sticky; left: 0; z-index: 8;
+    background: #FAFAFA;
+    border-right: 2px solid #D9D9D9;
+    border-bottom: 1px solid #E8E8E8;
+    font-size: 12px; color: #8C8C8C;
+    text-align: center; user-select: none;
+    width: 50px; min-width: 50px;
+    height: 28px;
+  }
+
+  /* ─── 数据单元格 ─── */
+  .data-cell {
+    height: 28px;
+    border-right: 1px solid #E8E8E8;
+    border-bottom: 1px solid #E8E8E8;
+    padding: 0 6px;
+    font-size: 13px; color: #262626;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    cursor: cell; user-select: none;
+    background: #fff;
+    min-width: 80px;
+  }
+  .data-cell.selected {
+    background: #E6F4FF !important;
+    outline: 2px solid #1890FF;
+    outline-offset: -2px;
+    z-index: 5; position: relative;
+  }
+  .data-cell.search-hit { background: #FFFBE6 !important; }
+  .data-cell.search-hit.selected { background: #FFE58F !important; }
+
+  /* ─── 编辑输入框 ─── */
+  #cell-editor {
+    position: fixed;
+    display: none;
+    border: 2px solid #1890FF;
+    outline: none;
+    padding: 0 6px;
+    font-size: 13px; font-family: inherit;
+    color: #262626; background: #fff;
+    z-index: 30;
+    box-sizing: border-box;
+    resize: none;
+    overflow: hidden;
+    line-height: 28px;
+  }
+
+  /* ─── 工具栏按钮 ─── */
+  .tb-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 28px; min-width: 28px; padding: 0 6px;
+    border-radius: 4px; cursor: pointer; font-size: 13px;
+    color: #595959; transition: background .15s, color .15s;
+    border: none; background: transparent;
+  }
+  .tb-btn:hover { background: #F0F0F0; color: #262626; }
+  .tb-btn.active { background: #E6F4FF; color: #1890FF; }
+  .tb-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .tb-sep { width: 1px; height: 20px; background: #E8E8E8; margin: 0 4px; flex-shrink: 0; }
+
+  /* ─── Sheet 标签 ─── */
+  .sheet-tab {
+    display: inline-flex; align-items: center; padding: 0 14px;
+    height: 36px; font-size: 13px; cursor: pointer; user-select: none;
+    border-right: 1px solid #F0F0F0;
+    color: #595959; transition: background .15s, color .15s;
+    white-space: nowrap; position: relative;
+  }
+  .sheet-tab:hover { background: #F0F7FF; }
+  .sheet-tab.active { color: #1890FF; font-weight: 500; background: #fff; }
+  .sheet-tab.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px; background: #1890FF;
+  }
+  .sheet-tab .del-btn {
+    display: none; margin-left: 6px; width: 14px; height: 14px;
+    border-radius: 50%; align-items: center; justify-content: center;
+    color: #8C8C8C; font-size: 10px;
+  }
+  .sheet-tab:hover .del-btn { display: inline-flex; }
+  .sheet-tab .del-btn:hover { background: #FFE8E8; color: #F5222D; }
+
+  /* ─── 右键菜单 ─── */
+  #ctx-menu {
+    position: fixed; z-index: 999; display: none;
+    background: #fff; border: 1px solid #E8E8E8;
+    border-radius: 6px; padding: 4px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    min-width: 160px;
+  }
+  #ctx-menu .item {
+    display: flex; align-items: center; padding: 7px 14px;
+    font-size: 13px; cursor: pointer; color: #262626;
+    transition: background .1s;
+  }
+  #ctx-menu .item:hover { background: #F0F7FF; color: #1890FF; }
+  #ctx-menu .item.danger:hover { background: #FFF1F0; color: #F5222D; }
+  #ctx-menu .sep { height: 1px; background: #F0F0F0; margin: 4px 0; }
+
+  .tab-active { color: #1890FF; border-bottom: 2px solid #1890FF; }
+  .tab-inactive { color: #595959; }
+
+  /* ─── 数据清洗页 ─── */
+  .cl-select {
+    height: 32px; border: 1px solid #D9D9D9; border-radius: 4px;
+    padding: 0 10px; font-size: 13px; color: #262626; background: #fff;
+    outline: none; transition: border-color .15s; cursor: pointer;
+  }
+  .cl-select:focus { border-color: #1890FF; }
+  .cl-select:disabled { background: #FAFAFA; color: #BFBFBF; cursor: not-allowed; }
+
+  #cl-table thead th {
+    position: sticky; top: 0; z-index: 10;
+    background: #FAFAFA;
+    border-bottom: 2px solid #D9D9D9;
+    border-right: 1px solid #E8E8E8;
+    padding: 8px 10px;
+    font-size: 12px; font-weight: 600; color: #595959;
+    white-space: nowrap; text-align: left; user-select: none;
+  }
+  #cl-table tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #F0F0F0;
+    border-right: 1px solid #F0F0F0;
+    font-size: 13px; color: #262626;
+    vertical-align: middle;
+  }
+  #cl-table tbody tr:hover { background: #F0F7FF !important; }
+
+  .cl-badge-none { display:inline-flex;align-items:center;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;background:#8C8C8C;color:#fff; }
+
+  .cl-kw-tag { display:inline-block;background:#4F46E5;color:#fff;border-radius:4px;padding:1px 8px;font-size:11px;font-weight:600;letter-spacing:.3px; }
+
+  .cl-manual-sel {
+    width: 100%; height: 26px; border: 1px solid #D9D9D9; border-radius: 3px;
+    padding: 0 4px; font-size: 12px; color: #262626; background: #fff;
+    outline: none; cursor: pointer;
+  }
+  .cl-manual-sel:focus { border-color: #1890FF; }
+
+  /* 完成按钮波纹 */
+  @keyframes done-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(82,196,26,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(82,196,26,0); }
+    100% { box-shadow: 0 0 0 0 rgba(82,196,26,0); }
+  }
+  #btn-done { animation: done-pulse 2s infinite; }
+
+  /* ─── 分类设置页 ─── */
+  .cfg-l1-block { background:#fff; border:1px solid #D6E4FF; border-radius:8px; margin-bottom:14px; overflow:hidden; box-shadow:0 1px 4px rgba(24,144,255,.06); }
+  .cfg-l1-header { background:linear-gradient(90deg,#E6F4FF,#F0F7FF); border-bottom:1px solid #BAE0FF; padding:10px 14px; display:flex; align-items:center; gap:8px; }
+  .cfg-l2-block { margin:0 12px 8px 12px; background:#FAFAFA; border:1px solid #F0F0F0; border-radius:6px; overflow:hidden; }
+  .cfg-l2-header { padding:7px 12px; display:flex; align-items:center; gap:8px; background:#F5F5F5; border-bottom:1px solid #EBEBEB; }
+  .cfg-l3-block { margin:0 10px 6px 10px; background:#fff; border:1px solid #F0F0F0; border-radius:4px; }
+  .cfg-l3-header { padding:5px 10px; display:flex; align-items:center; gap:6px; border-bottom:1px solid #F8F8F8; }
+  .cfg-kw-tag { display:inline-flex; align-items:center; background:#FFFBE6; color:#AD6800; border:1px solid #FFE58F; border-radius:3px; padding:0 6px; font-size:12px; gap:4px; height:22px; }
+  .cfg-kw-tag .rm { cursor:pointer; color:#BFBFBF; font-size:11px; transition:color .1s; }
+  .cfg-kw-tag .rm:hover { color:#F5222D; }
+  .cfg-add-btn { display:inline-flex; align-items:center; height:26px; padding:0 10px; border:1px dashed #D9D9D9; border-radius:4px; font-size:12px; color:#8C8C8C; cursor:pointer; background:transparent; transition:all .15s; gap:3px; }
+  .cfg-add-btn:hover { border-color:#1890FF; color:#1890FF; background:#F0F7FF; }
+  .cfg-del-btn { display:inline-flex; align-items:center; height:22px; padding:0 7px; border:1px solid #FFCDD2; border-radius:3px; font-size:11px; color:#F5222D; cursor:pointer; background:#FFF5F5; transition:all .15s; gap:2px; }
+  .cfg-del-btn:hover { background:#F5222D; color:#fff; border-color:#F5222D; }
+  .cfg-edit-btn { display:inline-flex; align-items:center; height:22px; padding:0 7px; border:1px solid #D9D9D9; border-radius:3px; font-size:11px; color:#595959; cursor:pointer; background:#fff; transition:all .15s; gap:2px; }
+  .cfg-edit-btn:hover { border-color:#1890FF; color:#1890FF; background:#E6F4FF; }
+</style>
+</head>
+<body class="bg-[#F5F7FA] text-[#595959] font-sans flex flex-col min-h-screen" style="min-width:1100px;">
+
+<!-- ═══════════════════ 顶部导航 ═══════════════════ -->
+<header class="h-[64px] bg-white border-b border-[#F0F0F0] px-8 flex items-center justify-between sticky top-0 z-50 shadow-sm">
+  <div class="flex items-center space-x-3">
+    <div class="w-10 h-10 bg-[#1890FF] rounded-lg flex items-center justify-center">
+      <span class="iconify text-white text-2xl" data-icon="mdi:table-edit"></span>
+    </div>
+    <h1 class="text-[24px] font-semibold text-[#262626]">Excel 在线编辑平台</h1>
+  </div>
+  <div class="flex items-center space-x-3 text-[14px]">
+    <div id="hd-filename" class="hidden items-center space-x-2 px-3 py-1.5 bg-[#F0F7FF] rounded-lg border border-[#BAE0FF]">
+      <span class="iconify text-[#1890FF] text-base" data-icon="mdi:file-excel-outline"></span>
+      <span id="hd-fname" class="text-[#1890FF] text-[13px] font-medium max-w-[200px] truncate"></span>
+      <span id="hd-dirty" class="hidden w-2 h-2 rounded-full bg-orange-400 ml-1" title="有未保存的修改"></span>
+    </div>
+    <button id="btn-goto-home" onclick="backToHome()"
+      class="hidden items-center space-x-1.5 px-3 h-[30px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#FF7875] hover:text-[#FF4D4F] transition-colors bg-white flex-shrink-0">
+      <span class="iconify" data-icon="mdi:home-outline"></span><span>返回首页</span>
+    </button>
+    <button onclick="showSettingsPage()"
+      class="flex items-center space-x-1.5 px-3 h-[30px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#1890FF] hover:text-[#1890FF] transition-colors bg-white flex-shrink-0">
+      <span class="iconify" data-icon="mdi:cog-outline"></span><span>分类设置</span>
+    </button>
+    <div class="flex items-center space-x-1.5 cursor-pointer hover:text-[#1890FF] transition-colors flex-shrink-0">
+      <span class="iconify" data-icon="mdi:help-circle-outline"></span>
+      <span>使用帮助</span>
+    </div>
+    <div class="flex items-center space-x-3 border-l pl-4 border-[#F0F0F0]">
+      <span class="text-[#8C8C8C]">管理员</span>
+      <div class="w-8 h-8 rounded-full bg-[#1890FF] flex items-center justify-center text-white text-sm font-semibold select-none">A</div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ 上传区（初始显示）═══════════════════ -->
+<main id="upload-section" class="flex-1 flex flex-col items-center justify-center p-8">
+  <div class="bg-white rounded-2xl shadow-sm border border-[#F0F0F0] p-12 w-[580px] text-center">
+    <div class="w-20 h-20 bg-[#E6F4FF] rounded-2xl flex items-center justify-center mx-auto mb-6">
+      <span class="iconify text-[#1890FF]" style="font-size:2.4rem;" data-icon="mdi:file-excel-outline"></span>
+    </div>
+    <h2 class="text-[20px] font-semibold text-[#262626] mb-2">上传 Excel 文件开始编辑</h2>
+    <p class="text-[14px] text-[#8C8C8C] mb-8">支持 .xls、.xlsx、.csv 格式 &nbsp;·&nbsp; 文件在浏览器本地处理，不会上传到服务器</p>
+    <div id="drop-zone" class="border-2 border-dashed border-[#D9D9D9] rounded-xl py-10 px-8 bg-[#FAFAFA] hover:border-[#1890FF] hover:bg-[#F0F7FF] transition-all cursor-pointer mb-6">
+      <span class="iconify text-[#BFBFBF] block mb-3" style="font-size:3rem;" data-icon="mdi:cloud-upload-outline"></span>
+      <p class="text-[15px] text-[#595959] font-medium">点击选择文件，或将文件拖拽到此处</p>
+      <p class="text-[13px] text-[#8C8C8C] mt-2">.xls &nbsp;·&nbsp; .xlsx &nbsp;·&nbsp; .csv</p>
+    </div>
+    <input type="file" id="file-input" accept=".csv,.xls,.xlsx" class="hidden"/>
+    <div class="flex items-center justify-center space-x-6 text-[13px] text-[#8C8C8C]">
+      <div class="flex items-center space-x-1.5">
+        <span class="iconify text-[#52C41A]" data-icon="mdi:check-circle-outline"></span>
+        <span>本地处理，数据安全</span>
+      </div>
+      <div class="flex items-center space-x-1.5">
+        <span class="iconify text-[#52C41A]" data-icon="mdi:check-circle-outline"></span>
+        <span>支持多 Sheet 切换</span>
+      </div>
+      <div class="flex items-center space-x-1.5">
+        <span class="iconify text-[#52C41A]" data-icon="mdi:check-circle-outline"></span>
+        <span>编辑后可导出 .xlsx</span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════════ 编辑器区（上传后显示）═══════════════════ -->
+<div id="editor-section" class="hidden flex-1 flex flex-col overflow-hidden" style="height: calc(100vh - 64px);">
+
+  <!-- ── 工具栏 ── -->
+  <div class="bg-white border-b border-[#F0F0F0] px-4 flex items-center flex-wrap gap-y-1 py-2" style="min-height:48px; flex-shrink:0;">
+    <!-- 文件操作 -->
+    <button class="tb-btn space-x-1.5 pr-3" onclick="triggerUpload()" title="打开新文件">
+      <span class="iconify" data-icon="mdi:folder-open-outline"></span><span>打开</span>
+    </button>
+    <button class="tb-btn space-x-1.5 pr-3 !bg-[#1890FF] !text-white hover:!bg-[#40a9ff]" onclick="exportFile()" title="导出 xlsx (Ctrl+S)">
+      <span class="iconify" data-icon="mdi:download-outline"></span><span>保存</span>
+    </button>
+    <div class="tb-sep"></div>
+
+    <!-- 撤销重做 -->
+    <button class="tb-btn" id="btn-undo" onclick="doUndo()" title="撤销 Ctrl+Z" disabled>
+      <span class="iconify" data-icon="mdi:undo-variant"></span>
+    </button>
+    <button class="tb-btn" id="btn-redo" onclick="doRedo()" title="重做 Ctrl+Y" disabled>
+      <span class="iconify" data-icon="mdi:redo-variant"></span>
+    </button>
+    <div class="tb-sep"></div>
+
+    <!-- 格式 -->
+    <button class="tb-btn font-bold" id="btn-bold" onclick="fmtToggle('bold')" title="加粗 Ctrl+B" style="font-size:14px;">B</button>
+    <button class="tb-btn italic"   id="btn-italic" onclick="fmtToggle('italic')" title="斜体 Ctrl+I" style="font-size:14px;">I</button>
+    <div class="tb-sep"></div>
+
+    <!-- 对齐 -->
+    <button class="tb-btn" onclick="fmtAlign('left')"   title="左对齐"><span class="iconify text-base" data-icon="mdi:format-align-left"></span></button>
+    <button class="tb-btn" onclick="fmtAlign('center')" title="居中">  <span class="iconify text-base" data-icon="mdi:format-align-center"></span></button>
+    <button class="tb-btn" onclick="fmtAlign('right')"  title="右对齐"><span class="iconify text-base" data-icon="mdi:format-align-right"></span></button>
+    <div class="tb-sep"></div>
+
+    <!-- 文字颜色 / 背景色 -->
+    <label class="tb-btn flex-col" style="height:32px;" title="字体颜色">
+      <span class="iconify text-sm" data-icon="mdi:format-color-text"></span>
+      <input type="color" id="inp-text-color" value="#000000" style="width:18px;height:4px;border:none;padding:0;cursor:pointer;" oninput="fmtColor('text',this.value)">
+    </label>
+    <label class="tb-btn flex-col" style="height:32px;" title="背景填充">
+      <span class="iconify text-sm" data-icon="mdi:format-color-fill"></span>
+      <input type="color" id="inp-bg-color" value="#ffffff" style="width:18px;height:4px;border:none;padding:0;cursor:pointer;" oninput="fmtColor('bg',this.value)">
+    </label>
+    <div class="tb-sep"></div>
+
+    <!-- 行列操作 -->
+    <button class="tb-btn space-x-1 pr-2" onclick="insertRow(false)" title="在上方插入行">
+      <span class="iconify" data-icon="mdi:table-row-plus-before"></span><span>插入行↑</span>
+    </button>
+    <button class="tb-btn space-x-1 pr-2" onclick="insertRow(true)" title="在下方插入行">
+      <span class="iconify" data-icon="mdi:table-row-plus-after"></span><span>插入行↓</span>
+    </button>
+    <button class="tb-btn space-x-1 pr-2 text-red-500 hover:bg-red-50" onclick="deleteSelectedRow()" title="删除当前行">
+      <span class="iconify" data-icon="mdi:table-row-remove"></span><span>删除行</span>
+    </button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn space-x-1 pr-2" onclick="insertCol(false)" title="在左侧插入列">
+      <span class="iconify" data-icon="mdi:table-column-plus-before"></span><span>插入列←</span>
+    </button>
+    <button class="tb-btn space-x-1 pr-2" onclick="insertCol(true)" title="在右侧插入列">
+      <span class="iconify" data-icon="mdi:table-column-plus-after"></span><span>插入列→</span>
+    </button>
+    <button class="tb-btn space-x-1 pr-2 text-red-500 hover:bg-red-50" onclick="deleteSelectedCol()" title="删除当前列">
+      <span class="iconify" data-icon="mdi:table-column-remove"></span><span>删除列</span>
+    </button>
+    <div class="tb-sep"></div>
+
+    <!-- 时间排序（升序 / 降序） -->
+    <button onclick="sortByCol(true)"
+      class="tb-btn space-x-1 pr-3 !bg-[#1890FF] !text-white"
+      onmouseover="this.style.background='#40a9ff'" onmouseout="this.style.background='#1890FF'"
+      title="升序排列（按选中列，支持日期 / 数字 / 文字）">
+      <span class="iconify text-base" data-icon="mdi:sort-ascending"></span>
+      <span>升序↑</span>
+    </button>
+    <button onclick="sortByCol(false)"
+      class="tb-btn space-x-1 pr-3 !bg-[#1890FF] !text-white"
+      onmouseover="this.style.background='#40a9ff'" onmouseout="this.style.background='#1890FF'"
+      title="降序排列（按选中列，支持日期 / 数字 / 文字）">
+      <span class="iconify text-base" data-icon="mdi:sort-descending"></span>
+      <span>降序↓</span>
+    </button>
+    <div class="tb-sep"></div>
+
+    <!-- 搜索 -->
+    <div class="flex items-center border border-[#D9D9D9] rounded px-2 py-1 space-x-1 bg-white focus-within:border-[#1890FF] transition-colors">
+      <span class="iconify text-[#8C8C8C]" data-icon="mdi:magnify"></span>
+      <input type="text" id="search-input" placeholder="搜索内容…" class="text-[13px] outline-none w-28 text-[#262626] bg-transparent" oninput="doSearch()"/>
+      <span id="search-count" class="text-[12px] text-[#8C8C8C] hidden"></span>
+    </div>
+
+    <!-- 右侧：单元格地址 + 值预览 + 完成按钮 -->
+    <div class="ml-auto flex items-center space-x-2 flex-shrink-0">
+      <div class="w-16 text-center text-[13px] font-mono bg-[#FAFAFA] border border-[#E8E8E8] rounded px-2 py-1 text-[#1890FF] font-medium" id="cell-addr">—</div>
+      <div class="min-w-[160px] max-w-[280px] truncate text-[13px] bg-[#FAFAFA] border border-[#E8E8E8] rounded px-2 py-1 text-[#262626]" id="cell-val">—</div>
+      <div class="tb-sep"></div>
+      <button id="btn-done" onclick="showCleaningPage()"
+        class="inline-flex items-center space-x-1.5 px-4 rounded font-medium text-white transition-colors"
+        style="height:32px; background:#52C41A; font-size:13px;"
+        onmouseover="this.style.background='#73d13d'" onmouseout="this.style.background='#52C41A'">
+        <span class="iconify" data-icon="mdi:check-circle-outline"></span>
+        <span>完成 &amp; 数据清洗</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 表格主体 ── -->
+  <div id="spreadsheet-wrap" class="flex-1 overflow-auto spreadsheet-wrap" style="background:#fff;">
+    <table id="ss-table">
+      <thead id="ss-thead"></thead>
+      <tbody id="ss-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- ── Sheet 标签栏 ── -->
+  <div class="bg-white border-t border-[#F0F0F0] flex items-center overflow-x-auto" style="height:36px; flex-shrink:0;">
+    <div id="sheet-tabs" class="flex items-stretch h-full flex-shrink-0"></div>
+    <button class="w-8 h-full flex items-center justify-center text-[#8C8C8C] hover:text-[#1890FF] hover:bg-[#F0F7FF] transition-colors flex-shrink-0" onclick="addSheet()" title="添加工作表">
+      <span class="iconify text-base" data-icon="mdi:plus"></span>
+    </button>
+    <div class="ml-auto pr-4 text-[12px] text-[#8C8C8C] flex items-center space-x-3 flex-shrink-0">
+      <span id="sb-rows"></span>
+      <span id="sb-cols"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ 数据清洗页 ═══════════════════ -->
+<div id="cleaning-section" class="hidden flex-1 flex flex-col overflow-hidden" style="height:calc(100vh - 64px);">
+
+  <!-- ── 清洗工具栏 ── -->
+  <div class="bg-white border-b border-[#F0F0F0] px-5 flex items-center space-x-3" style="height:48px; flex-shrink:0;">
+    <button onclick="backToEditor()"
+      class="inline-flex items-center space-x-1.5 px-3 h-[32px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#1890FF] hover:text-[#1890FF] transition-colors bg-white">
+      <span class="iconify" data-icon="mdi:arrow-left"></span><span>返回编辑</span>
+    </button>
+    <div class="tb-sep"></div>
+    <span class="iconify text-[#1890FF] text-lg" data-icon="mdi:filter-cog-outline"></span>
+    <span class="text-[15px] font-semibold text-[#262626]">数据清洗 &amp; 分类标注</span>
+
+    <!-- 右侧统计 + 导出 -->
+    <div class="ml-auto flex items-center space-x-5">
+      <div class="flex items-center space-x-4 text-[13px]">
+        <span class="flex items-center space-x-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#52C41A] flex-shrink-0"></span>
+          <span class="text-[#595959]">已分类 <b id="stat-classified" class="text-[#262626]">0</b> 行</span>
+        </span>
+        <span class="flex items-center space-x-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-orange-400 flex-shrink-0"></span>
+          <span class="text-[#595959]">未分类 <b id="stat-unclassified" class="text-[#262626]">0</b> 行</span>
+        </span>
+      </div>
+      <button onclick="exportCleaned()"
+        class="inline-flex items-center space-x-1.5 px-4 h-[32px] rounded text-[13px] font-medium text-white transition-colors"
+        style="background:#1890FF;" onmouseover="this.style.background='#40a9ff'" onmouseout="this.style.background='#1890FF'">
+        <span class="iconify" data-icon="mdi:download-outline"></span><span>保存&导出结果</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 分类筛选区 ── -->
+  <div class="bg-white border-b border-[#F0F0F0] px-6 py-3" style="flex-shrink:0;">
+    <div class="flex items-end space-x-3 flex-wrap gap-y-2">
+      <span class="text-[13px] font-medium text-[#595959] flex-shrink-0 pb-0.5">筛选分类：</span>
+
+      <!-- L1 -->
+      <div class="flex flex-col space-y-1">
+        <span class="text-[11px] text-[#8C8C8C]">一级分类</span>
+        <select id="cl-l1" class="cl-select" style="min-width:120px;" onchange="onClL1Change()">
+          <option value="">全部</option>
+        </select>
+      </div>
+
+      <span class="iconify text-[#D9D9D9] text-xl pb-0.5" data-icon="mdi:chevron-right"></span>
+
+      <!-- L2 -->
+      <div class="flex flex-col space-y-1">
+        <span class="text-[11px] text-[#8C8C8C]">二级分类</span>
+        <select id="cl-l2" class="cl-select" style="min-width:200px;" onchange="onClL2Change()" disabled>
+          <option value="">全部</option>
+        </select>
+      </div>
+
+      <span class="iconify text-[#D9D9D9] text-xl pb-0.5" data-icon="mdi:chevron-right"></span>
+
+      <!-- L3 -->
+      <div class="flex flex-col space-y-1">
+        <span class="text-[11px] text-[#8C8C8C]">三级分类（科目）</span>
+        <select id="cl-l3" class="cl-select" style="min-width:220px;" onchange="applyClFilter()" disabled>
+          <option value="">全部</option>
+        </select>
+      </div>
+
+      <button onclick="clearClFilter()"
+        class="mb-0.5 px-3 h-[32px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#FF4D4F] hover:text-[#FF4D4F] transition-colors bg-white flex-shrink-0">
+        <span class="iconify mr-1" data-icon="mdi:filter-remove-outline"></span>清除筛选
+      </button>
+
+      <button id="btn-save-filtered" onclick="saveFilteredData()"
+        class="mb-0.5 inline-flex items-center px-3 h-[32px] border border-[#1890FF] rounded text-[13px] font-medium text-white flex-shrink-0 transition-opacity hover:opacity-80"
+        style="background:#1890FF;" title="将当前筛选条件下的数据保存为 Excel 文件">
+        <span class="iconify mr-1" data-icon="mdi:content-save-outline"></span>导出筛选分类结果
+      </button>
+
+      <!-- 结果计数 -->
+      <div class="ml-auto flex items-center space-x-2 text-[13px] flex-shrink-0 pb-0.5">
+        <span class="text-[#8C8C8C]">当前显示</span>
+        <b id="cl-count" class="text-[#1890FF] text-[15px]">0</b>
+        <span class="text-[#8C8C8C]">行 / 共</span>
+        <b id="cl-total" class="text-[#262626]">0</b>
+        <span class="text-[#8C8C8C]">行</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sheet 切换标签 ── -->
+  <div class="bg-[#FAFAFA] border-b border-[#F0F0F0] px-4 flex items-center space-x-2 overflow-x-auto" style="height:38px; flex-shrink:0;">
+    <span class="text-[12px] text-[#8C8C8C] flex-shrink-0">工作表：</span>
+    <div id="cl-sheet-tabs" class="flex items-center space-x-1.5 h-full"></div>
+  </div>
+
+  <!-- ── 数据表格 ── -->
+  <div id="cl-table-wrap" class="flex-1 overflow-auto" style="background:#fff; position:relative;">
+    <!-- 空状态 -->
+    <div id="cl-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-[#BFBFBF]">
+      <span class="iconify text-5xl mb-3" data-icon="mdi:filter-off-outline"></span>
+      <p class="text-[15px]">当前筛选条件下没有匹配数据</p>
+      <button onclick="clearClFilter()" class="mt-3 text-[13px] text-[#1890FF] hover:underline">清除筛选</button>
+    </div>
+    <table id="cl-table" class="w-full" style="border-collapse:collapse;">
+      <thead id="cl-thead"></thead>
+      <tbody id="cl-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ 分类设置页 ═══════════════════ -->
+<div id="settings-section" class="hidden flex-1 flex flex-col overflow-hidden" style="height:calc(100vh - 64px);">
+
+  <!-- ── 顶部工具栏 ── -->
+  <div class="bg-white border-b border-[#F0F0F0] px-5 flex items-center space-x-3" style="height:48px; flex-shrink:0;">
+    <button onclick="backFromSettings()"
+      class="inline-flex items-center space-x-1.5 px-3 h-[32px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#1890FF] hover:text-[#1890FF] transition-colors bg-white">
+      <span class="iconify" data-icon="mdi:arrow-left"></span><span>返回</span>
+    </button>
+    <div class="tb-sep"></div>
+    <span class="iconify text-[#1890FF] text-lg" data-icon="mdi:cog-outline"></span>
+    <span class="text-[15px] font-semibold text-[#262626]">分类标题与关键词设置</span>
+    <div class="ml-auto flex items-center space-x-2">
+      <button onclick="cfgResetToDefault()"
+        class="inline-flex items-center space-x-1.5 px-3 h-[32px] border border-[#D9D9D9] rounded text-[13px] text-[#595959] hover:border-[#FF4D4F] hover:text-[#FF4D4F] transition-colors bg-white">
+        <span class="iconify" data-icon="mdi:restore"></span><span>恢复默认</span>
+      </button>
+      <button id="btn-save-settings" onclick="saveSettings()"
+        class="inline-flex items-center space-x-1.5 px-4 h-[32px] rounded text-[13px] font-medium text-white transition-all"
+        style="background:#1890FF;" onmouseover="this.style.background='#40a9ff'" onmouseout="this.style.background='#1890FF'">
+        <span class="iconify" data-icon="mdi:check-circle-outline"></span><span>保存并应用</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 提示栏 ── -->
+  <div class="bg-[#E6F4FF] border-b border-[#BAE0FF] px-6 py-2 text-[13px] text-[#1565C0] flex items-center space-x-2" style="flex-shrink:0;">
+    <span class="iconify flex-shrink-0" data-icon="mdi:information-outline"></span>
+    <span>在此设置数据清洗的分类体系（一级 → 二级 → 三级标题 + 关键词）。修改后点击「保存并应用」，清洗页面将使用新的分类规则。设置会自动保存在本机浏览器中。</span>
+  </div>
+
+  <!-- ── 树内容 ── -->
+  <div class="flex-1 overflow-auto p-6">
+    <div id="cfg-tree" class="max-w-3xl"></div>
+    <div class="max-w-3xl mt-4">
+      <button onclick="cfgAddL1()"
+        class="cfg-add-btn text-[14px] h-[40px] px-8 border-solid border-[#1890FF] text-[#1890FF] bg-[#F0F7FF] hover:bg-[#BAE0FF]"
+        style="border-style:solid;">
+        <span class="iconify text-lg" data-icon="mdi:plus-circle-outline"></span>
+        添加一级标题
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 底部（上传页时显示）-->
+<footer id="page-footer" class="py-6 flex flex-col items-center space-y-2">
+  <div class="flex space-x-8 text-[14px]">
+    <a class="text-[#1890FF] hover:underline" href="#">操作指南</a>
+    <a class="text-[#8C8C8C] hover:text-[#1890FF]" href="#">故障上报</a>
+    <a class="text-[#8C8C8C] hover:text-[#1890FF]" href="#">隐私政策</a>
+  </div>
+  <p class="text-[12px] text-[#8C8C8C]">© 2026 Excel 在线编辑平台</p>
+</footer>
+
+<!-- ─── 浮动编辑输入框（覆盖在单元格上）─── -->
+<input id="cell-editor" type="text" autocomplete="off" spellcheck="false"/>
+
+<!-- ─── 右键菜单 ─── -->
+<div id="ctx-menu">
+  <div class="item" onclick="ctxAction('insertRowBefore')"><span class="iconify mr-2" data-icon="mdi:table-row-plus-before"></span>上方插入行</div>
+  <div class="item" onclick="ctxAction('insertRowAfter')"> <span class="iconify mr-2" data-icon="mdi:table-row-plus-after"></span>下方插入行</div>
+  <div class="item danger" onclick="ctxAction('deleteRow')"><span class="iconify mr-2" data-icon="mdi:table-row-remove"></span>删除当前行</div>
+  <div class="sep"></div>
+  <div class="item" onclick="ctxAction('insertColBefore')"><span class="iconify mr-2" data-icon="mdi:table-column-plus-before"></span>左侧插入列</div>
+  <div class="item" onclick="ctxAction('insertColAfter')"> <span class="iconify mr-2" data-icon="mdi:table-column-plus-after"></span>右侧插入列</div>
+  <div class="item danger" onclick="ctxAction('deleteCol')"><span class="iconify mr-2" data-icon="mdi:table-column-remove"></span>删除当前列</div>
+  <div class="sep"></div>
+  <div class="item" onclick="ctxAction('clearCell')"><span class="iconify mr-2" data-icon="mdi:eraser-variant"></span>清空单元格</div>
+  <div class="item" onclick="ctxAction('copyCell')"><span class="iconify mr-2" data-icon="mdi:content-copy"></span>复制</div>
+</div>
+
+<!-- ─── Loading 遮罩 ─── -->
+<div id="loading-mask" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-opacity duration-500">
+  <div class="w-12 h-12 border-4 border-[#1890FF] border-t-transparent rounded-full animate-spin mb-4"></div>
+  <div class="text-[#1890FF] text-lg font-medium">系统初始化中…</div>
+  <div class="text-[#8C8C8C] text-sm mt-2">请稍候，正在加载资源</div>
+</div>
+
+<!-- ═══════════════════════ JavaScript ═══════════════════════ -->
+<script>
+// ─── Loading 遮罩 ───
+window.addEventListener('load', () => {
+  const m = document.getElementById('loading-mask');
+  m.style.opacity = '0';
+  setTimeout(() => m.style.display = 'none', 500);
+});
+setTimeout(() => {
+  const m = document.getElementById('loading-mask');
+  if (m && m.style.display !== 'none') { m.style.opacity='0'; setTimeout(()=>m.style.display='none',500); }
+}, 5000);
+
+// ═══════════════════════════════════
+//  核心状态
+// ═══════════════════════════════════
+let sheetsData  = {};   // { sheetName: [[val,...], ...] }
+let sheetsStyle = {};   // { sheetName: { "r,c": {bold,italic,align,textColor,bgColor} } }
+let sheetNames  = [];
+let activeSheet = '';
+let sel = null;         // { r, c } 选中单元格
+let isEditing = false;
+let origName  = 'document.xlsx';
+let isDirty   = false;
+let undoStack = [];
+let redoStack = [];
+// 渲染参数
+const CELL_W = 110, CELL_H = 28, ROW_HDR = 50;
+
+// ═══════════════════════════════════
+//  文件上传 / 解析
+// ═══════════════════════════════════
+function triggerUpload() { document.getElementById('file-input').click(); }
+document.getElementById('drop-zone').addEventListener('click', triggerUpload);
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+  e.target.value = '';
+});
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-[#1890FF]','bg-[#F0F7FF]'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('border-[#1890FF]','bg-[#F0F7FF]'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('border-[#1890FF]','bg-[#F0F7FF]');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(file) {
+  origName = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+
+  reader.onload = ev => {
+    try {
+      sheetsData = {}; sheetsStyle = {}; sheetNames = [];
+      undoStack = []; redoStack = []; isDirty = false;
+
+      // 统一用 XLSX.read 解析（含 CSV），自动检测 UTF-8 / GBK / GB18030 等编码
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', codepage: 936 });
+      if (ext === 'csv') {
+        // CSV 解析结果只有一个 sheet，统一命名为 Sheet1
+        const rawSheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(rawSheet, { header:1, defval:'' });
+        sheetsData['Sheet1'] = normalizeRows(rows);
+        sheetsStyle['Sheet1'] = {};
+        sheetNames = ['Sheet1'];
+        activeSheet = 'Sheet1';
+      } else {
+        sheetNames = wb.SheetNames;
+        sheetNames.forEach(n => {
+          const raw = XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, defval:'' });
+          sheetsData[n]  = normalizeRows(raw);
+          sheetsStyle[n] = {};
+        });
+        activeSheet = sheetNames[0];
+      }
+
+      // 切换到编辑器
+      document.getElementById('upload-section').classList.add('hidden');
+      document.getElementById('page-footer').classList.add('hidden');
+      const es = document.getElementById('editor-section');
+      es.classList.remove('hidden'); es.classList.add('flex');
+
+      const hd = document.getElementById('hd-filename');
+      hd.classList.remove('hidden'); hd.classList.add('flex');
+      document.getElementById('hd-fname').textContent = file.name;
+      const homeBtn = document.getElementById('btn-goto-home');
+      homeBtn.classList.remove('hidden'); homeBtn.classList.add('flex');
+
+      renderSheetTabs();
+      renderSheet();
+    } catch(err) { alert('文件解析失败：' + err.message); }
+  };
+
+  // 统一用 ArrayBuffer，让 XLSX.read 自行处理编码（支持 GBK/UTF-8 等）
+  reader.readAsArrayBuffer(file);
+}
+
+function normalizeRows(raw) {
+  if (!raw || !raw.length) return Array.from({length:30}, () => Array(20).fill(''));
+  // 用 reduce 替代 Math.max(...array)，避免超大文件（10万行+）导致调用栈溢出
+  const cols = Math.max(raw.reduce((m, r) => Math.max(m, r.length), 0), 10);
+  const rows = raw.map(r => { const a=[...r]; while(a.length<cols) a.push(''); return a; });
+  while(rows.length < 30) rows.push(Array(cols).fill(''));
+  return rows;
+}
+
+// ═══════════════════════════════════
+//  Sheet 标签
+// ═══════════════════════════════════
+function renderSheetTabs() {
+  const c = document.getElementById('sheet-tabs');
+  c.innerHTML = sheetNames.map(n => `
+    <div class="sheet-tab${n===activeSheet?' active':''}" onclick="switchSheet('${esc(n)}')">
+      <span class="iconify mr-1.5 text-[#52C41A] text-sm" data-icon="mdi:table"></span>
+      <span ondblclick="renameSheet('${esc(n)}',event)" style="pointer-events:all;">${escH(n)}</span>
+      ${sheetNames.length>1?`<span class="del-btn" onclick="deleteSheet('${esc(n)}',event)">✕</span>`:''}
+    </div>`).join('');
+}
+
+function switchSheet(name) {
+  if (isEditing) commitEdit(true);
+  activeSheet = name; sel = null;
+  renderSheetTabs(); renderSheet();
+}
+
+function addSheet() {
+  let i=sheetNames.length+1, name='Sheet'+i;
+  while(sheetsData[name]) name='Sheet'+(++i);
+  sheetsData[name] = Array.from({length:30},()=>Array(20).fill(''));
+  sheetsStyle[name] = {};
+  sheetNames.push(name);
+  activeSheet = name;
+  renderSheetTabs(); renderSheet();
+}
+
+function deleteSheet(name, e) {
+  e.stopPropagation();
+  if (sheetNames.length<=1) { alert('至少保留一个工作表'); return; }
+  if (!confirm(`确认删除工作表 "${name}"？`)) return;
+  sheetNames = sheetNames.filter(n=>n!==name);
+  delete sheetsData[name]; delete sheetsStyle[name];
+  if (activeSheet===name) activeSheet = sheetNames[0];
+  renderSheetTabs(); renderSheet();
+}
+
+function renameSheet(name, e) {
+  e.stopPropagation();
+  const nn = prompt('请输入新名称：', name);
+  if (!nn || nn===name) return;
+  if (sheetsData[nn]) { alert('名称已存在'); return; }
+  const idx = sheetNames.indexOf(name);
+  sheetNames[idx] = nn;
+  sheetsData[nn]  = sheetsData[name];  delete sheetsData[name];
+  sheetsStyle[nn] = sheetsStyle[name]; delete sheetsStyle[name];
+  if (activeSheet===name) activeSheet=nn;
+  renderSheetTabs(); renderSheet();
+}
+
+// ═══════════════════════════════════
+//  表格渲染
+// ═══════════════════════════════════
+const MAX_RENDER_ROWS = 3000;   // 超出时只渲染前 3000 行，避免浏览器冻结
+const MAX_RENDER_COLS = 300;    // 超出时只渲染前 300 列
+
+function colLetter(n) {
+  let s=''; n++;
+  while(n>0){ n--; s=String.fromCharCode(65+n%26)+s; n=Math.floor(n/26); }
+  return s;
+}
+
+function renderSheet() {
+  const data   = sheetsData[activeSheet]  || [];
+  const styles = sheetsStyle[activeSheet] || {};
+  const R_total = data.length;
+  // 用 reduce 替代展开运算符，防止超大列数崩溃
+  const C_total = data.reduce((m, r) => Math.max(m, r.length), 1);
+  const R = Math.min(R_total, MAX_RENDER_ROWS);
+  const C = Math.min(C_total, MAX_RENDER_COLS);
+
+  // ── 列头 ──
+  let thHtml = `<tr><th class="col-th corner" style="width:${ROW_HDR}px;"></th>`;
+  for (let c=0; c<C; c++)
+    thHtml += `<th class="col-th" style="width:${CELL_W}px;">${colLetter(c)}</th>`;
+  thHtml += '</tr>';
+  document.getElementById('ss-thead').innerHTML = thHtml;
+
+  // ── 数据行 ──
+  let tbHtml = '';
+  for (let r=0; r<R; r++) {
+    tbHtml += `<tr>`;
+    tbHtml += `<td class="row-th">${r+1}</td>`;
+    const row = data[r] || [];
+    for (let c=0; c<C; c++) {
+      const val = row[c]!==undefined ? row[c] : '';
+      const st  = styles[`${r},${c}`] || {};
+      let inlineStyle = `height:${CELL_H}px;`;
+      if (st.bold)      inlineStyle += 'font-weight:bold;';
+      if (st.italic)    inlineStyle += 'font-style:italic;';
+      if (st.align)     inlineStyle += `text-align:${st.align};`;
+      if (st.bgColor && st.bgColor!=='#ffffff') inlineStyle += `background:${st.bgColor};`;
+      if (st.textColor && st.textColor!=='#000000') inlineStyle += `color:${st.textColor};`;
+      tbHtml += `<td class="data-cell" data-r="${r}" data-c="${c}" style="${inlineStyle}">${escH(String(val))}</td>`;
+    }
+    tbHtml += '</tr>';
+  }
+  // 若行/列超出渲染上限，追加提示行
+  if (R_total > MAX_RENDER_ROWS || C_total > MAX_RENDER_COLS) {
+    const warnCols = C + 1;
+    tbHtml += `<tr><td colspan="${warnCols}" style="text-align:center;padding:10px;background:#FFFBE6;color:#AD6800;font-size:12px;border-top:2px solid #FFE58F;">
+      ⚠️ 文件共 ${R_total} 行 × ${C_total} 列，当前仅渲染前 ${R} 行 × ${C} 列。导出时将保留全部数据。
+    </td></tr>`;
+  }
+
+  document.getElementById('ss-tbody').innerHTML = tbHtml;
+
+  sel = null; updateStatusBar(); updateCellInfo();
+  document.getElementById('sb-rows').textContent = `${R_total} 行`;
+  document.getElementById('sb-cols').textContent = `${C_total} 列`;
+}
+
+// ═══════════════════════════════════
+//  单元格交互
+// ═══════════════════════════════════
+document.getElementById('ss-tbody').addEventListener('mousedown', e => {
+  const td = e.target.closest('td.data-cell');
+  if (!td) return;
+  hideCtxMenu();
+  if (isEditing) commitEdit(true);
+  selectCell(+td.dataset.r, +td.dataset.c);
+  e.preventDefault();
+});
+
+document.getElementById('ss-tbody').addEventListener('dblclick', e => {
+  const td = e.target.closest('td.data-cell');
+  if (!td) return;
+  startEdit(+td.dataset.r, +td.dataset.c);
+});
+
+document.getElementById('ss-tbody').addEventListener('contextmenu', e => {
+  const td = e.target.closest('td.data-cell');
+  if (!td) return;
+  e.preventDefault();
+  if (!isEditing) selectCell(+td.dataset.r, +td.dataset.c);
+  showCtxMenu(e.clientX, e.clientY);
+});
+
+function selectCell(r, c) {
+  document.querySelectorAll('.data-cell.selected').forEach(el => el.classList.remove('selected'));
+  sel = {r, c};
+  const el = getCellEl(r, c);
+  if (el) el.classList.add('selected');
+  updateCellInfo();
+  updateFmtBtns();
+}
+
+function updateCellInfo() {
+  if (!sel) { document.getElementById('cell-addr').textContent='—'; document.getElementById('cell-val').textContent='—'; return; }
+  const {r,c} = sel;
+  document.getElementById('cell-addr').textContent = colLetter(c)+(r+1);
+  const v = (sheetsData[activeSheet][r]||[])[c];
+  document.getElementById('cell-val').textContent = v!==undefined&&v!=='' ? String(v) : '—';
+}
+
+function updateStatusBar() {}
+
+function getCellEl(r, c) {
+  return document.querySelector(`#ss-tbody td[data-r="${r}"][data-c="${c}"]`);
+}
+
+// ─── 浮动编辑框 ───
+const editor = document.getElementById('cell-editor');
+
+function startEdit(r, c, replaceWith) {
+  if (!sel || sel.r!==r || sel.c!==c) selectCell(r,c);
+  isEditing = true;
+  const el = getCellEl(r, c);
+  if (!el) return;
+
+  const rect = el.getBoundingClientRect();
+  editor.style.left   = rect.left   + 'px';
+  editor.style.top    = rect.top    + 'px';
+  editor.style.width  = rect.width  + 'px';
+  editor.style.height = rect.height + 'px';
+  editor.style.lineHeight = rect.height + 'px';
+
+  // 复制单元格格式
+  const st = (sheetsStyle[activeSheet]||{})[`${r},${c}`] || {};
+  editor.style.fontWeight  = st.bold   ? 'bold'   : 'normal';
+  editor.style.fontStyle   = st.italic ? 'italic' : 'normal';
+  editor.style.textAlign   = st.align  || 'left';
+  editor.style.color       = st.textColor || '#262626';
+  editor.style.background  = st.bgColor  || '#fff';
+
+  const curVal = (sheetsData[activeSheet][r]||[])[c];
+  editor.value = replaceWith !== undefined ? replaceWith : (curVal!==undefined ? String(curVal) : '');
+  editor.dataset.r = r; editor.dataset.c = c;
+  editor.style.display = 'block';
+  editor.focus();
+  if (replaceWith !== undefined) {
+    editor.setSelectionRange(editor.value.length, editor.value.length);
+  } else {
+    editor.select();
+  }
+}
+
+function commitEdit(silent) {
+  if (!isEditing) return;
+  isEditing = false;
+  const r = +editor.dataset.r, c = +editor.dataset.c;
+  const newVal = editor.value;
+  const data = sheetsData[activeSheet];
+  const oldVal = (data[r]||[])[c];
+  editor.style.display = 'none';
+
+  if (String(newVal) !== String(oldVal!==undefined?oldVal:'')) {
+    pushUndo({type:'edit', sheet:activeSheet, r, c, oldVal: oldVal!==undefined?oldVal:'', newVal});
+    if (!data[r]) data[r] = [];
+    data[r][c] = newVal;
+    markDirty();
+    const el = getCellEl(r,c);
+    if (el) el.innerHTML = escH(newVal);
+  }
+  if (!silent) selectCell(r, c);
+  updateCellInfo();
+}
+
+function cancelEdit() {
+  if (!isEditing) return;
+  isEditing = false;
+  editor.style.display = 'none';
+  if (sel) selectCell(sel.r, sel.c);
+}
+
+editor.addEventListener('keydown', e => {
+  if (e.key==='Escape') { cancelEdit(); e.preventDefault(); return; }
+  if (e.key==='Enter' && !e.shiftKey) {
+    e.preventDefault(); commitEdit();
+    if (sel) moveBy(1,0);
+    return;
+  }
+  if (e.key==='Tab') {
+    e.preventDefault(); commitEdit();
+    if (sel) moveBy(0, e.shiftKey?-1:1);
+    return;
+  }
+});
+
+editor.addEventListener('blur', () => { if (isEditing) commitEdit(true); });
+
+// ─── 键盘导航 ───
+document.addEventListener('keydown', e => {
+  if (isEditing) return;
+  if (!sel) return;
+
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl) {
+    if (e.key==='z') { e.preventDefault(); doUndo(); return; }
+    if (e.key==='y') { e.preventDefault(); doRedo(); return; }
+    if (e.key==='b') { e.preventDefault(); fmtToggle('bold'); return; }
+    if (e.key==='i') { e.preventDefault(); fmtToggle('italic'); return; }
+    if (e.key==='s') { e.preventDefault(); exportFile(); return; }
+    return;
+  }
+
+  if (e.key==='ArrowUp')    { e.preventDefault(); moveBy(-1,0); return; }
+  if (e.key==='ArrowDown')  { e.preventDefault(); moveBy(1,0);  return; }
+  if (e.key==='ArrowLeft')  { e.preventDefault(); moveBy(0,-1); return; }
+  if (e.key==='ArrowRight') { e.preventDefault(); moveBy(0,1);  return; }
+  if (e.key==='Tab')        { e.preventDefault(); moveBy(0,e.shiftKey?-1:1); return; }
+  if (e.key==='Enter')      { e.preventDefault(); startEdit(sel.r, sel.c); return; }
+  if (e.key==='F2')         { e.preventDefault(); startEdit(sel.r, sel.c); return; }
+  if (e.key==='Delete'||e.key==='Backspace') { e.preventDefault(); clearCellAt(sel.r,sel.c); return; }
+
+  // 直接输入字符 → 进入编辑并替换
+  if (e.key.length===1 && !ctrl && !e.altKey) {
+    startEdit(sel.r, sel.c, e.key);
+  }
+});
+
+// 点击表格外时 commit
+document.addEventListener('mousedown', e => {
+  if (!isEditing) return;
+  if (e.target===editor) return;
+  if (e.target.closest('#ss-tbody td.data-cell')) return;
+  commitEdit(true);
+});
+
+function moveBy(dr, dc) {
+  if (!sel) return;
+  const data = sheetsData[activeSheet]||[];
+  const R = data.length;
+  const C = data.reduce((m, r) => Math.max(m, r.length), 1);
+  const nr = Math.max(0,Math.min(R-1, sel.r+dr));
+  const nc = Math.max(0,Math.min(C-1, sel.c+dc));
+  selectCell(nr,nc);
+  getCellEl(nr,nc)?.scrollIntoView({block:'nearest',inline:'nearest'});
+}
+
+function clearCellAt(r, c) {
+  const data = sheetsData[activeSheet];
+  const old = (data[r]||[])[c];
+  if (old===''||old===undefined) return;
+  pushUndo({type:'edit', sheet:activeSheet, r, c, oldVal:old, newVal:''});
+  if (!data[r]) data[r]=[];
+  data[r][c]='';
+  markDirty();
+  const el = getCellEl(r,c);
+  if (el) el.innerHTML='';
+  updateCellInfo();
+}
+
+// ═══════════════════════════════════
+//  格式
+// ═══════════════════════════════════
+function getStyle(r,c) {
+  if (!sheetsStyle[activeSheet]) sheetsStyle[activeSheet]={};
+  const k=`${r},${c}`;
+  if (!sheetsStyle[activeSheet][k]) sheetsStyle[activeSheet][k]={};
+  return sheetsStyle[activeSheet][k];
+}
+
+function applyStyleToEl(el, st) {
+  el.style.fontWeight  = st.bold   ? 'bold'   : '';
+  el.style.fontStyle   = st.italic ? 'italic' : '';
+  el.style.textAlign   = st.align  || '';
+  el.style.background  = (st.bgColor && st.bgColor!=='#ffffff') ? st.bgColor : '';
+  el.style.color       = (st.textColor && st.textColor!=='#000000') ? st.textColor : '';
+}
+
+function fmtToggle(prop) {
+  if (!sel) return;
+  const st = getStyle(sel.r, sel.c);
+  st[prop] = !st[prop];
+  const el = getCellEl(sel.r, sel.c);
+  if (el) applyStyleToEl(el, st);
+  markDirty(); updateFmtBtns();
+}
+
+function fmtAlign(a) {
+  if (!sel) return;
+  const st = getStyle(sel.r, sel.c);
+  st.align = a;
+  const el = getCellEl(sel.r, sel.c);
+  if (el) el.style.textAlign = a;
+  markDirty();
+}
+
+function fmtColor(type, color) {
+  if (!sel) return;
+  const st = getStyle(sel.r, sel.c);
+  if (type==='text') st.textColor=color; else st.bgColor=color;
+  const el = getCellEl(sel.r, sel.c);
+  if (el) applyStyleToEl(el, st);
+  markDirty();
+}
+
+function updateFmtBtns() {
+  if (!sel) { return; }
+  const st = (sheetsStyle[activeSheet]||{})[`${sel.r},${sel.c}`]||{};
+  document.getElementById('btn-bold').classList.toggle('active', !!st.bold);
+  document.getElementById('btn-italic').classList.toggle('active', !!st.italic);
+  if (st.textColor) document.getElementById('inp-text-color').value = st.textColor;
+  if (st.bgColor)   document.getElementById('inp-bg-color').value   = st.bgColor;
+}
+
+// ═══════════════════════════════════
+//  行列操作
+// ═══════════════════════════════════
+function insertRow(after) {
+  const r = sel ? (after ? sel.r+1 : sel.r) : (sheetsData[activeSheet]||[]).length;
+  const data = sheetsData[activeSheet]||[];
+  const C = data.reduce((m, row) => Math.max(m, row.length), 10);
+  data.splice(r, 0, Array(C).fill(''));
+  markDirty(); renderSheet();
+  if (sel) selectCell(after?sel.r+1:sel.r, sel.c);
+}
+
+function deleteSelectedRow() {
+  if (!sel) { alert('请先选中一个单元格'); return; }
+  const data = sheetsData[activeSheet]||[];
+  if (data.length<=1) { alert('至少保留一行'); return; }
+  const r = sel.r;
+  // 记录撤销快照
+  pushUndo({ type:'deleteRow', sheet:activeSheet, r, savedRow:[...(data[r]||[])] });
+  data.splice(r, 1);
+  markDirty(); renderSheet();
+  // 保持 sel 有效
+  const newR = Math.min(r, data.length - 1);
+  selectCell(newR, Math.min(sel.c, (data[newR]||[]).length - 1));
+}
+
+function insertCol(after) {
+  const c = sel ? (after ? sel.c+1 : sel.c) : ((sheetsData[activeSheet]||[[]])[0]||[]).length;
+  const data = sheetsData[activeSheet]||[];
+  data.forEach(row => row.splice(c,0,''));
+  markDirty(); renderSheet();
+  if (sel) selectCell(sel.r, after?sel.c+1:sel.c);
+}
+
+function deleteSelectedCol() {
+  if (!sel) { alert('请先选中一个单元格'); return; }
+  const data = sheetsData[activeSheet]||[];
+  if ((data[0]||[]).length<=1) { alert('至少保留一列'); return; }
+  const c = sel.c;
+  // 记录撤销快照（保存整列数据）
+  const savedCol = data.map(row => (row[c] !== undefined ? row[c] : ''));
+  pushUndo({ type:'deleteCol', sheet:activeSheet, c, savedCol });
+  data.forEach(row => row.splice(c, 1));
+  markDirty(); renderSheet();
+  // 保持 sel 有效
+  const newC = Math.min(c, (data[0]||[]).length - 1);
+  selectCell(Math.min(sel.r, data.length - 1), newC);
+}
+
+// ═══════════════════════════════════
+//  时间排序
+// ═══════════════════════════════════
+/* asc=true 升序，asc=false 降序 */
+function sortByCol(asc) {
+  const data = sheetsData[activeSheet] || [];
+  if (data.length <= 1) { alert('数据为空，无法排序'); return; }
+
+  // 确定排序列：优先取选中列，否则自动探测日期列
+  const col = (sel != null) ? sel.c : _autoDetectDateCol(data);
+
+  // 保存快照供撤销
+  const snapshot = data.map(r => r.slice());
+  pushUndo({ type: 'sortSnapshot', sheet: activeSheet, snapshot });
+
+  // 分离表头（第一行）与数据行
+  const header = data[0];
+  const bodyRows = data.slice(1);
+
+  // 分开空行与有内容行，空行始终排末尾
+  const nonEmpty = bodyRows.filter(r => r.some(v => v !== '' && v !== undefined && v !== null));
+  const emptyRows = bodyRows.filter(r => r.every(v => v === '' || v === undefined || v === null));
+
+  nonEmpty.sort((a, b) => {
+    const va = a[col] !== undefined ? a[col] : '';
+    const vb = b[col] !== undefined ? b[col] : '';
+    const pa = _parseVal(va);
+    const pb = _parseVal(vb);
+    if (pa === null && pb === null) return 0;
+    if (pa === null) return 1;
+    if (pb === null) return -1;
+    if (pa < pb) return asc ? -1 : 1;
+    if (pa > pb) return asc ? 1 : -1;
+    return 0;
+  });
+
+  sheetsData[activeSheet] = [header, ...nonEmpty, ...emptyRows];
+  markDirty();
+  renderSheet();
+}
+
+/* 将单元格值解析为可比较的值（Date 时间戳 / 数字 / 字符串 / null） */
+function _parseVal(v) {
+  if (v === '' || v === undefined || v === null) return null;
+  const s = String(v).trim();
+  if (s === '') return null;
+  // 尝试日期（包含年份或斜杠/连字符分隔的日期格式）
+  if (/\d{4}[-\/]\d{1,2}|^\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}$|^\d{8}$/.test(s)) {
+    const d = new Date(s.length === 8 ? `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}` : s);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  // 尝试纯数字
+  const n = parseFloat(s.replace(/,/g, ''));
+  if (!isNaN(n) && s !== '') return n;
+  // 回退到字符串（按 Unicode 排序）
+  return s;
+}
+
+/* 自动探测第一个含有日期值的列，否则返回 0 */
+function _autoDetectDateCol(data) {
+  const cols = (data[0] || []).length;
+  const sampleRows = Math.min(data.length, 8);
+  for (let c = 0; c < cols; c++) {
+    let hits = 0;
+    for (let r = 1; r < sampleRows; r++) {
+      const v = (data[r] || [])[c];
+      if (v && /\d{4}[-\/]\d{1,2}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(String(v))) hits++;
+    }
+    if (hits >= 2) return c;
+  }
+  return 0;
+}
+
+// ═══════════════════════════════════
+//  撤销 / 重做
+// ═══════════════════════════════════
+function pushUndo(act) {
+  undoStack.push(act);
+  if (undoStack.length>200) undoStack.shift();
+  redoStack=[];
+  document.getElementById('btn-undo').disabled=false;
+  document.getElementById('btn-redo').disabled=true;
+}
+
+function doUndo() {
+  if (!undoStack.length) return;
+  const act = undoStack.pop();
+  redoStack.push(act);
+  applyAct(act, true);
+  document.getElementById('btn-undo').disabled = !undoStack.length;
+  document.getElementById('btn-redo').disabled = false;
+}
+
+function doRedo() {
+  if (!redoStack.length) return;
+  const act = redoStack.pop();
+  undoStack.push(act);
+  applyAct(act, false);
+  document.getElementById('btn-redo').disabled = !redoStack.length;
+  document.getElementById('btn-undo').disabled = false;
+}
+
+function applyAct(act, isUndo) {
+  if (act.type === 'edit') {
+    const data = sheetsData[act.sheet];
+    if (!data[act.r]) data[act.r] = [];
+    data[act.r][act.c] = isUndo ? act.oldVal : act.newVal;
+    if (activeSheet === act.sheet) {
+      const el = getCellEl(act.r, act.c);
+      if (el) el.innerHTML = escH(String(isUndo ? act.oldVal : act.newVal));
+      selectCell(act.r, act.c);
+    }
+  } else if (act.type === 'deleteRow') {
+    const data = sheetsData[act.sheet];
+    if (isUndo) {
+      data.splice(act.r, 0, [...act.savedRow]);   // 恢复被删的行
+    } else {
+      data.splice(act.r, 1);                       // 重新删除
+    }
+    if (activeSheet === act.sheet) renderSheet();
+  } else if (act.type === 'deleteCol') {
+    const data = sheetsData[act.sheet];
+    if (isUndo) {
+      data.forEach((row, i) => row.splice(act.c, 0, act.savedCol[i] ?? ''));  // 恢复列
+    } else {
+      data.forEach(row => row.splice(act.c, 1));   // 重新删除
+    }
+    if (activeSheet === act.sheet) renderSheet();
+  } else if (act.type === 'sortSnapshot') {
+    // 撤销/重做排序：整体替换数据快照
+    sheetsData[act.sheet] = act.snapshot.map(r => r.slice());
+    if (activeSheet === act.sheet) renderSheet();
+  }
+  markDirty();
+}
+
+// ═══════════════════════════════════
+//  搜索
+// ═══════════════════════════════════
+let searchHits=[], searchHitIdx=0;
+function doSearch() {
+  document.querySelectorAll('.data-cell.search-hit').forEach(el=>el.classList.remove('search-hit'));
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const countEl = document.getElementById('search-count');
+  if (!q) { countEl.classList.add('hidden'); searchHits=[]; return; }
+
+  const data = sheetsData[activeSheet]||[];
+  searchHits=[];
+  data.forEach((row,r)=>row.forEach((v,c)=>{
+    if (String(v).toLowerCase().includes(q)) searchHits.push({r,c});
+  }));
+
+  searchHits.forEach(({r,c})=>{
+    const el=getCellEl(r,c); if(el) el.classList.add('search-hit');
+  });
+
+  if (searchHits.length) {
+    countEl.textContent=`${searchHits.length} 处`;
+    countEl.classList.remove('hidden');
+    searchHitIdx=0;
+    const {r,c}=searchHits[0];
+    selectCell(r,c);
+    getCellEl(r,c)?.scrollIntoView({block:'nearest',inline:'nearest'});
+  } else {
+    countEl.textContent='无结果'; countEl.classList.remove('hidden');
+  }
+}
+
+// ═══════════════════════════════════
+//  右键菜单
+// ═══════════════════════════════════
+function showCtxMenu(x,y) {
+  const m=document.getElementById('ctx-menu');
+  m.style.left=x+'px'; m.style.top=y+'px'; m.style.display='block';
+}
+function hideCtxMenu() { document.getElementById('ctx-menu').style.display='none'; }
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') hideCtxMenu(); });
+
+function ctxAction(action) {
+  hideCtxMenu();
+  if (!sel) return;
+  switch(action) {
+    case 'insertRowBefore': insertRow(false); break;
+    case 'insertRowAfter':  insertRow(true);  break;
+    case 'deleteRow':       deleteSelectedRow(); break;
+    case 'insertColBefore': insertCol(false); break;
+    case 'insertColAfter':  insertCol(true);  break;
+    case 'deleteCol':       deleteSelectedCol(); break;
+    case 'clearCell':       clearCellAt(sel.r, sel.c); break;
+    case 'copyCell': {
+      const v = (sheetsData[activeSheet][sel.r]||[])[sel.c];
+      navigator.clipboard?.writeText(String(v||'')).catch(()=>{});
+      break;
+    }
+  }
+}
+
+// ═══════════════════════════════════
+//  导出（浏览器下载 + 服务端备份）
+// ═══════════════════════════════════
+
+/**
+ * 统一导出入口：
+ *  1. 在浏览器触发下载
+ *  2. 异步 POST 到 /api/save-excel，由服务器保存到 output/ 目录
+ *     （如果在纯静态模式下打开，POST 失败会静默忽略，不影响下载）
+ */
+async function exportAndSave(wb, outName) {
+  // 生成 xlsx 二进制
+  const wbArr = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+  // ① 浏览器本地下载
+  const blob = new Blob([wbArr], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = outName;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  // ② 服务端备份（不阻塞 UI）
+  try {
+    const resp = await fetch('/api/save-excel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'X-Filename': encodeURIComponent(outName)
+      },
+      body: wbArr
+    });
+    if (resp.ok) {
+      const r = await resp.json();
+      console.log('[导出] 服务端已保存:', r.path);
+    }
+  } catch(e) {
+    // 非服务器环境（直接打开 HTML 文件）时静默忽略
+    console.log('[导出] 服务端保存跳过（非服务器模式）');
+  }
+}
+
+function exportFile() {
+  try {
+    const wb = XLSX.utils.book_new();
+    sheetNames.forEach(n => {
+      const ws = XLSX.utils.aoa_to_sheet(sheetsData[n]);
+      XLSX.utils.book_append_sheet(wb, ws, n);
+    });
+    const ext = origName.split('.').pop().toLowerCase();
+    const outName = ext==='xlsx' ? origName : origName.replace(/\.[^.]+$/,'')+'.xlsx';
+    exportAndSave(wb, outName);
+    isDirty=false;
+    document.getElementById('hd-dirty').classList.add('hidden');
+  } catch(err) { alert('导出失败：'+err.message); }
+}
+
+// ═══════════════════════════════════
+//  脏标记
+// ═══════════════════════════════════
+function markDirty() {
+  isDirty=true;
+  document.getElementById('hd-dirty').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════
+//  工具函数
+// ═══════════════════════════════════
+function escH(s) {
+  if(s===undefined||s===null) return '';
+  return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function esc(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function parseCSV(text) {
+  return text.split(/\r?\n/).filter(l=>l.trim()).map(l=>{
+    const cells=[]; let cur='', inQ=false;
+    for(let i=0;i<l.length;i++){
+      const ch=l[i];
+      if(ch==='"'){ if(inQ&&l[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
+      else if(ch===','&&!inQ){ cells.push(cur); cur=''; }
+      else cur+=ch;
+    }
+    cells.push(cur); return cells;
+  });
+}
+
+// 窗口 resize 时关闭编辑状态（避免编辑框位置错乱）
+window.addEventListener('resize', ()=>{ if(isEditing) cancelEdit(); });
+
+// 离开页面前提示
+window.addEventListener('beforeunload', e=>{ if(isDirty){ e.preventDefault(); e.returnValue=''; } });
+
+// ═══════════════════════════════════════════════════════════
+//  数据清洗 & 分类标注模块
+// ═══════════════════════════════════════════════════════════
+
+// ─── 分类树（三级，用户可配置，持久化到 localStorage）───
+const _TREE_STORAGE_KEY = 'excel_platform_classify_tree';
+
+const DEFAULT_CLASSIFY_TREE = [
+  {
+    l1: '收入分类',
+    children: [
+      {
+        l2: '营业收入',
+        children: [
+          { l3: '客房业务收入', keywords: ['美团酒店预订','营业款','日期'] }
+        ]
+      },
+      {
+        l2: '其他收入',
+        children: [
+          { l3: '其他收入', keywords: [] }
+        ]
+      }
+    ]
+  },
+  {
+    l1: '支出分类',
+    children: [
+      {
+        l2: '主营业务税金及附加',
+        children: [
+          { l3: '附加税', keywords: ['印花税'] }
+        ]
+      },
+      {
+        l2: '营业成本及费用',
+        children: [
+          { l3: '人力成本',      keywords: ['工资','佣金','失业保险费','生育保险费','企业职工基本养老保险费','基本医疗保险费','住房公积金','工作服','健康证','个人所得税'] },
+          { l3: '客房租用',      keywords: ['布草','洗发水','沐浴乳','一次性打包盒','垃圾袋','乳胶手套','小商品','烟','冰淇淋','一次性'] },
+          { l3: '餐饮成本',      keywords: ['食材','纯净水','早餐','买菜','菜'] },
+          { l3: '能源能耗',      keywords: ['水电费','煤气'] },
+          { l3: '维修维护费',    keywords: ['维修','检查'] },
+          { l3: '通讯费',        keywords: ['电信','话费','电视费','手机费'] },
+          { l3: '广告宣传及印刷品费', keywords: ['广告费','推广','摄影'] },
+          { l3: '公共设施费',    keywords: ['停车券','停车费','垃圾清运费','虫','绿化','电梯'] },
+          { l3: '行政费用',      keywords: ['品牌管理费','招待费','打车费','联盟服务费','差旅费','打印机','业务招待','快递费','会展服务费','保险','办公','服务费'] },
+          { l3: '财务费用',     keywords: ['结息','手续费','网银服务费'] }
+        ]
+      },
+      {
+        l2: '其他支出',
+        children: [
+          { l3: '其他支出', keywords: [] }
+        ]
+      }
+    ]
+  }
+];
+
+// 从 localStorage 加载，若无则使用默认树
+function _loadTreeFromStorage() {
+  try {
+    const raw = localStorage.getItem(_TREE_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+function _saveTreeToStorage() {
+  try { localStorage.setItem(_TREE_STORAGE_KEY, JSON.stringify(CLASSIFY_TREE)); } catch(e) {}
+}
+
+let CLASSIFY_TREE = _loadTreeFromStorage() || JSON.parse(JSON.stringify(DEFAULT_CLASSIFY_TREE));
+
+// 构建 L3 → {l1, l2} 快速查找表（动态，随 CLASSIFY_TREE 更新）
+let L3_MAP = {};
+function rebuildL3Map() {
+  L3_MAP = {};
+  CLASSIFY_TREE.forEach(l1n => l1n.children.forEach(l2n => l2n.children.forEach(l3n => {
+    L3_MAP[l3n.l3] = { l1: l1n.l1, l2: l2n.l2, keywords: l3n.keywords };
+  })));
+}
+rebuildL3Map();
+
+// ─── 清洗页状态 ───
+let clSheet = '';
+let clRowCls = {};   // { sheetName: { rowIdx: {l1,l2,l3,keyword,manualL3} } }
+
+// ─── 进入 / 退出清洗页 ───
+function showCleaningPage() {
+  if (isEditing) commitEdit(true);
+  if (!activeSheet || !sheetsData[activeSheet]) { alert('请先上传并编辑一个 Excel 文件'); return; }
+
+  document.getElementById('editor-section').classList.add('hidden');
+  document.getElementById('editor-section').classList.remove('flex');
+  const cs = document.getElementById('cleaning-section');
+  cs.classList.remove('hidden'); cs.classList.add('flex');
+
+  clSheet = activeSheet;
+  initCleaning();
+}
+
+function backToEditor() {
+  document.getElementById('cleaning-section').classList.add('hidden');
+  document.getElementById('cleaning-section').classList.remove('flex');
+  const es = document.getElementById('editor-section');
+  es.classList.remove('hidden'); es.classList.add('flex');
+}
+
+// ─── 初始化清洗页 ───
+function populateClL1() {
+  const sel = document.getElementById('cl-l1');
+  sel.innerHTML = '<option value="">全部</option>';
+  CLASSIFY_TREE.forEach(l1n => {
+    sel.innerHTML += `<option value="${escH(l1n.l1)}">${escH(l1n.l1)}</option>`;
+  });
+}
+
+function initCleaning() {
+  populateClL1();
+  autoClassifySheet(clSheet);
+  renderClSheetTabs();
+  clearClFilter();
+  updateClStats();
+}
+
+function autoClassifySheet(shName) {
+  if (clRowCls[shName]) return;   // 已分类过，不重复
+  clRowCls[shName] = {};
+  const data = sheetsData[shName] || [];
+  for (let r = 1; r < data.length; r++) {   // 跳过表头行
+    clRowCls[shName][r] = autoClassifyRow(data[r] || []);
+  }
+}
+
+function autoClassifyRow(row) {
+  const text = row.map(v => String(v===undefined||v===null?'':v)).join(' ');
+  for (const l1n of CLASSIFY_TREE) {
+    for (const l2n of l1n.children) {
+      for (const l3n of l2n.children) {
+        for (const kw of (l3n.keywords || [])) {
+          if (kw && text.includes(kw)) {
+            return { l1: l1n.l1, l2: l2n.l2, l3: l3n.l3, keyword: kw, manualL3: null };
+          }
+        }
+      }
+    }
+  }
+  // 关键词未命中 → 按金额符号兜底：>0 归"其他收入"，<0 归"其他支出"
+  const amount = detectRowAmount(row);
+  if (amount > 0) return { l1: '收入分类', l2: '其他收入', l3: '其他收入', keyword: '金额>0', manualL3: null };
+  if (amount < 0) return { l1: '支出分类', l2: '其他支出', l3: '其他支出', keyword: '金额<0', manualL3: null };
+  return { l1: '', l2: '', l3: '', keyword: '', manualL3: null };
+}
+
+/* 从一行数据中探测"进出款项"数值：返回第一个有效非零数字（跳过日期格式） */
+function detectRowAmount(row) {
+  let firstNeg = null, firstPos = null;
+  for (const v of row) {
+    if (v === '' || v === undefined || v === null) continue;
+    const s = String(v).trim();
+    if (!s) continue;
+    // 跳过日期格式（如 2024-01-05 / 20240105 / 2024/1/5）
+    if (/^\d{4}[-\/]\d{1,2}[-\/]\d{1,2}$|^\d{8}$/.test(s)) continue;
+    const n = parseFloat(s.replace(/,/g, ''));
+    if (isNaN(n) || n === 0) continue;
+    if (n < 0 && firstNeg === null) firstNeg = n;
+    if (n > 0 && firstPos === null) firstPos = n;
+  }
+  // 负数优先（支出更具区分度）；若只有正数则取正数
+  if (firstNeg !== null) return firstNeg;
+  if (firstPos !== null) return firstPos;
+  return 0;
+}
+
+// ─── Sheet 标签 ───
+function renderClSheetTabs() {
+  const c = document.getElementById('cl-sheet-tabs');
+  c.innerHTML = sheetNames.map(n => `
+    <button onclick="switchClSheet('${esc(n)}')"
+      class="px-3 h-[26px] rounded text-[12px] transition-colors flex-shrink-0 ${n===clSheet
+        ? 'bg-[#1890FF] text-white'
+        : 'bg-white border border-[#E8E8E8] text-[#595959] hover:border-[#1890FF] hover:text-[#1890FF]'}"
+    >${escH(n)}</button>`).join('');
+}
+
+function switchClSheet(name) {
+  clSheet = name;
+  autoClassifySheet(name);
+  renderClSheetTabs();
+  clearClFilter();
+  updateClStats();
+}
+
+// ─── 下拉级联 ───
+function onClL1Change() {
+  const l1 = document.getElementById('cl-l1').value;
+  const l2sel = document.getElementById('cl-l2');
+  const l3sel = document.getElementById('cl-l3');
+
+  l2sel.innerHTML = '<option value="">全部</option>';
+  l3sel.innerHTML = '<option value="">全部</option>';
+  l3sel.disabled = true;
+
+  if (!l1) {
+    l2sel.disabled = true;
+  } else {
+    l2sel.disabled = false;
+    const node = CLASSIFY_TREE.find(n => n.l1 === l1);
+    if (node) node.children.forEach(l2n => {
+      l2sel.innerHTML += `<option value="${escH(l2n.l2)}">${escH(l2n.l2)}</option>`;
+    });
+  }
+  applyClFilter();
+}
+
+function onClL2Change() {
+  const l1 = document.getElementById('cl-l1').value;
+  const l2 = document.getElementById('cl-l2').value;
+  const l3sel = document.getElementById('cl-l3');
+
+  l3sel.innerHTML = '<option value="">全部</option>';
+  if (!l2) { l3sel.disabled = true; applyClFilter(); return; }
+
+  l3sel.disabled = false;
+  const l1n = CLASSIFY_TREE.find(n => n.l1 === l1);
+  if (l1n) {
+    const l2n = l1n.children.find(n => n.l2 === l2);
+    if (l2n) l2n.children.forEach(l3n => {
+      l3sel.innerHTML += `<option value="${escH(l3n.l3)}">${escH(l3n.l3)}</option>`;
+    });
+  }
+  applyClFilter();
+}
+
+function clearClFilter() {
+  document.getElementById('cl-l1').value = '';
+  const l2s = document.getElementById('cl-l2');
+  l2s.innerHTML = '<option value="">全部</option>'; l2s.disabled = true;
+  const l3s = document.getElementById('cl-l3');
+  l3s.innerHTML = '<option value="">全部</option>'; l3s.disabled = true;
+  applyClFilter();
+}
+
+// ─── 分类标签颜色（哈希映射，收入/支出各自独立色板）───
+const _INCOME_PALETTE = [
+  {bg:'#10B981',c:'#fff'}, // emerald
+  {bg:'#0EA5E9',c:'#fff'}, // sky blue
+  {bg:'#06B6D4',c:'#fff'}, // cyan
+  {bg:'#22C55E',c:'#fff'}, // green
+  {bg:'#3B82F6',c:'#fff'}, // blue
+  {bg:'#14B8A6',c:'#fff'}, // teal
+  {bg:'#84CC16',c:'#fff'}, // lime
+  {bg:'#6366F1',c:'#fff'}, // indigo
+];
+const _EXPENSE_PALETTE = [
+  {bg:'#EF4444',c:'#fff'}, // red
+  {bg:'#F97316',c:'#fff'}, // orange
+  {bg:'#A855F7',c:'#fff'}, // purple
+  {bg:'#EC4899',c:'#fff'}, // pink
+  {bg:'#DC2626',c:'#fff'}, // dark red
+  {bg:'#EA580C',c:'#fff'}, // deep orange
+  {bg:'#9333EA',c:'#fff'}, // violet
+  {bg:'#DB2777',c:'#fff'}, // magenta
+  {bg:'#C2410C',c:'#fff'}, // burnt orange
+  {bg:'#7C3AED',c:'#fff'}, // dark violet
+];
+function _strHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function _getBadgeStyle(l3, isIncome) {
+  if (!l3) return 'background:#8C8C8C;color:#fff;';
+  const pal = isIncome ? _INCOME_PALETTE : _EXPENSE_PALETTE;
+  const { bg, c } = pal[_strHash(l3) % pal.length];
+  return `background:${bg};color:${c};`;
+}
+
+// ─── 渲染 / 筛选表格 ───
+function applyClFilter() {
+  const fl1 = document.getElementById('cl-l1').value;
+  const fl2 = document.getElementById('cl-l2').value;
+  const fl3 = document.getElementById('cl-l3').value;
+
+  const data = sheetsData[clSheet] || [];
+  const rowCls = clRowCls[clSheet] || {};
+  const headers = data[0] || [];
+
+  // ── 计算列显示顺序：与导出保持一致 ──
+  const colOrder = buildClColOrder(headers);
+
+  // ── 构建表头 ──
+  let th = '<tr>';
+  th += `<th style="width:48px;text-align:center;">序号</th>`;
+  colOrder.forEach(ci => { th += `<th>${escH(String(headers[ci]))}</th>`; });
+  th += `<th style="min-width:130px;">分类科目</th>`;
+  th += `<th style="min-width:90px;">匹配关键词</th>`;
+  th += `<th style="min-width:160px;text-align:center;">手动修正分类</th>`;
+  th += '</tr>';
+  document.getElementById('cl-thead').innerHTML = th;
+
+  // ── 构建行 ──
+  let tbHtml = '';
+  let visible = 0;
+  const totalRows = [];
+
+  for (let r = 1; r < data.length; r++) {
+    const row = data[r] || [];
+    if (row.every(v => v===''||v===undefined||v===null)) continue;
+    totalRows.push(r);
+
+    const cls = rowCls[r] || { l1:'', l2:'', l3:'', keyword:'', manualL3:null };
+    const curL3 = cls.manualL3 !== null ? cls.manualL3 : cls.l3;
+    const curL2 = curL3 ? (L3_MAP[curL3]?.l2 || cls.l2) : cls.l2;
+    const curL1 = curL3 ? (L3_MAP[curL3]?.l1 || cls.l1) : cls.l1;
+
+    // 筛选
+    if (fl1 && curL1 !== fl1) continue;
+    if (fl2 && curL2 !== fl2) continue;
+    if (fl3 && curL3 !== fl3) continue;
+
+    visible++;
+    const isIncome = curL1 === '收入分类';
+    const rowBg = visible % 2 === 0 ? '#FAFAFA' : '#ffffff';
+
+    tbHtml += `<tr style="background:${rowBg};">`;
+    // 序号（每张表重新从1排列）
+    tbHtml += `<td style="color:#8C8C8C;text-align:center;font-size:12px;">${visible}</td>`;
+    // 数据列（按 colOrder 顺序）
+    colOrder.forEach(ci => {
+      const v = row[ci] !== undefined ? row[ci] : '';
+      tbHtml += `<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escH(String(v))}">${escH(String(v))}</td>`;
+    });
+    // 分类科目
+    let badge = '';
+    if (curL3) {
+      const bStyle = _getBadgeStyle(curL3, isIncome);
+      badge = `<span style="display:inline-flex;align-items:center;padding:2px 10px;border-radius:10px;font-size:12px;font-weight:600;${bStyle}">${escH(curL3)}</span>`;
+    } else {
+      badge = `<span class="cl-badge-none">未分类</span>`;
+    }
+    tbHtml += `<td>${badge}</td>`;
+    // 匹配关键词
+    const kw = cls.manualL3 !== null ? '手动' : (cls.keyword || '');
+    tbHtml += `<td><span class="${kw?'cl-kw-tag':''}">${escH(kw) || '—'}</span></td>`;
+    // 手动修正
+    tbHtml += `<td style="padding:4px 6px;"><select class="cl-manual-sel" onchange="setManualCls(${r},this.value)">${buildL3Options(curL3)}</select></td>`;
+    tbHtml += '</tr>';
+  }
+
+  document.getElementById('cl-tbody').innerHTML = tbHtml;
+  document.getElementById('cl-count').textContent = visible;
+  document.getElementById('cl-total').textContent = totalRows.length;
+
+  const isEmpty = visible === 0;
+  document.getElementById('cl-table').style.display = isEmpty ? 'none' : '';
+  document.getElementById('cl-empty').classList.toggle('hidden', !isEmpty);
+}
+
+// 构建 L3 下拉 option 列表
+function buildL3Options(selectedL3) {
+  let html = `<option value="">— 未分类 —</option>`;
+  CLASSIFY_TREE.forEach(l1n => {
+    html += `<optgroup label="【${l1n.l1}】">`;
+    l1n.children.forEach(l2n => {
+      html += `<optgroup label="  ${l2n.l2}">`;
+      l2n.children.forEach(l3n => {
+        const sel = l3n.l3 === selectedL3 ? ' selected' : '';
+        html += `<option value="${escH(l3n.l3)}"${sel}>　${escH(l3n.l3)}</option>`;
+      });
+      html += '</optgroup>';
+    });
+    html += '</optgroup>';
+  });
+  return html;
+}
+
+// 手动修正分类
+function setManualCls(rowIdx, l3Value) {
+  if (!clRowCls[clSheet]) clRowCls[clSheet] = {};
+  const cls = clRowCls[clSheet][rowIdx] || { l1:'', l2:'', l3:'', keyword:'', manualL3:null };
+  cls.manualL3 = l3Value || null;
+  clRowCls[clSheet][rowIdx] = cls;
+  updateClStats();
+  // 局部刷新该行徽章（避免整表重渲染）
+  applyClFilter();
+}
+
+// 更新统计数字
+function updateClStats() {
+  const rowCls = clRowCls[clSheet] || {};
+  const data = sheetsData[clSheet] || [];
+  let classified = 0, unclassified = 0;
+  for (let r = 1; r < data.length; r++) {
+    const row = data[r];
+    if (!row || row.every(v => v===''||v===undefined||v===null)) continue;
+    const cls = rowCls[r];
+    const l3 = cls ? (cls.manualL3 !== null ? cls.manualL3 : cls.l3) : '';
+    if (l3) classified++; else unclassified++;
+  }
+  document.getElementById('stat-classified').textContent = classified;
+  document.getElementById('stat-unclassified').textContent = unclassified;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  页面导航（首页 / 设置页）
+// ═══════════════════════════════════════════════════════════
+
+let _settingsReturnPage = 'upload';   // 'upload' | 'editor' | 'cleaning'
+
+/** 从任意页跳回上传首页 */
+function backToHome() {
+  if (isDirty) {
+    if (!confirm('有未保存的修改，确定要返回首页吗？返回后当前编辑内容将丢失。')) return;
+  }
+  // 重置所有编辑状态
+  sheetsData = {}; sheetsStyle = {}; sheetNames = []; activeSheet = '';
+  sel = null; isEditing = false; isDirty = false; undoStack = []; redoStack = [];
+  origName = 'document.xlsx'; clSheet = ''; clRowCls = {};
+
+  ['editor-section','cleaning-section','settings-section'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add('hidden'); el.classList.remove('flex');
+  });
+  document.getElementById('upload-section').classList.remove('hidden');
+  document.getElementById('page-footer').classList.remove('hidden');
+
+  const hdf = document.getElementById('hd-filename');
+  hdf.classList.add('hidden'); hdf.classList.remove('flex');
+  document.getElementById('hd-dirty').classList.add('hidden');
+
+  const homeBtn = document.getElementById('btn-goto-home');
+  homeBtn.classList.add('hidden'); homeBtn.classList.remove('flex');
+}
+
+/** 从任意页跳转到设置页 */
+function showSettingsPage() {
+  const edHidden = document.getElementById('editor-section').classList.contains('hidden');
+  const clHidden = document.getElementById('cleaning-section').classList.contains('hidden');
+  if (!edHidden)      _settingsReturnPage = 'editor';
+  else if (!clHidden) _settingsReturnPage = 'cleaning';
+  else                _settingsReturnPage = 'upload';
+
+  document.getElementById('upload-section').classList.add('hidden');
+  document.getElementById('page-footer').classList.add('hidden');
+  document.getElementById('editor-section').classList.add('hidden');
+  document.getElementById('editor-section').classList.remove('flex');
+  document.getElementById('cleaning-section').classList.add('hidden');
+  document.getElementById('cleaning-section').classList.remove('flex');
+
+  const ss = document.getElementById('settings-section');
+  ss.classList.remove('hidden'); ss.classList.add('flex');
+  renderSettingsPage();
+}
+
+/** 从设置页返回之前的页面 */
+function backFromSettings() {
+  document.getElementById('settings-section').classList.add('hidden');
+  document.getElementById('settings-section').classList.remove('flex');
+
+  if (_settingsReturnPage === 'editor') {
+    const es = document.getElementById('editor-section');
+    es.classList.remove('hidden'); es.classList.add('flex');
+  } else if (_settingsReturnPage === 'cleaning') {
+    const cs = document.getElementById('cleaning-section');
+    cs.classList.remove('hidden'); cs.classList.add('flex');
+  } else {
+    document.getElementById('upload-section').classList.remove('hidden');
+    document.getElementById('page-footer').classList.remove('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  分类设置页 — 渲染 & CRUD
+// ═══════════════════════════════════════════════════════════
+
+/** 渲染完整分类树 */
+function renderSettingsPage() {
+  let html = '';
+  if (CLASSIFY_TREE.length === 0) {
+    html = `<div class="text-center text-[#BFBFBF] py-16">
+      <span class="iconify text-5xl block mb-3" data-icon="mdi:folder-open-outline"></span>
+      <p class="text-[15px]">暂无分类，请点击下方「添加一级标题」开始</p>
+    </div>`;
+  }
+  CLASSIFY_TREE.forEach((l1n, l1i) => {
+    html += `
+    <div class="cfg-l1-block">
+      <div class="cfg-l1-header">
+        <span class="iconify text-[#1890FF] text-xl flex-shrink-0" data-icon="mdi:folder"></span>
+        <span id="cfg-l1-lbl-${l1i}" class="font-semibold text-[#262626] flex-1 text-[15px] min-w-0 break-all">${escH(l1n.l1)}</span>
+        <button class="cfg-edit-btn flex-shrink-0" onclick="cfgEditL1(${l1i})"><span class="iconify" data-icon="mdi:pencil-outline"></span> 重命名</button>
+        <button class="cfg-del-btn flex-shrink-0" onclick="cfgDeleteL1(${l1i})"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除</button>
+      </div>
+      <div class="p-3 space-y-2">`;
+
+    if (l1n.children.length === 0) {
+      html += `<p class="text-[12px] text-[#BFBFBF] pl-2 pb-1">暂无二级标题</p>`;
+    }
+
+    l1n.children.forEach((l2n, l2i) => {
+      html += `
+        <div class="cfg-l2-block">
+          <div class="cfg-l2-header">
+            <span class="iconify text-[#52C41A] flex-shrink-0" data-icon="mdi:folder-open-outline"></span>
+            <span id="cfg-l2-lbl-${l1i}-${l2i}" class="font-medium text-[#595959] flex-1 text-[13px] min-w-0 break-all">${escH(l2n.l2)}</span>
+            <button class="cfg-edit-btn flex-shrink-0" onclick="cfgEditL2(${l1i},${l2i})"><span class="iconify" data-icon="mdi:pencil-outline"></span> 重命名</button>
+            <button class="cfg-del-btn flex-shrink-0" onclick="cfgDeleteL2(${l1i},${l2i})"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除</button>
+          </div>
+          <div class="p-2 space-y-1.5">`;
+
+      if (l2n.children.length === 0) {
+        html += `<p class="text-[12px] text-[#BFBFBF] pl-2 pb-0.5">暂无三级标题</p>`;
+      }
+
+      l2n.children.forEach((l3n, l3i) => {
+        html += `
+            <div class="cfg-l3-block">
+              <div class="cfg-l3-header">
+                <span class="iconify text-[#722ED1] text-sm flex-shrink-0" data-icon="mdi:tag-outline"></span>
+                <span id="cfg-l3-lbl-${l1i}-${l2i}-${l3i}" class="text-[12px] font-medium text-[#595959] flex-1 min-w-0 break-all">${escH(l3n.l3)}</span>
+                <button class="cfg-edit-btn flex-shrink-0" onclick="cfgEditL3(${l1i},${l2i},${l3i})"><span class="iconify" data-icon="mdi:pencil-outline"></span> 重命名</button>
+                <button class="cfg-del-btn flex-shrink-0" onclick="cfgDeleteL3(${l1i},${l2i},${l3i})"><span class="iconify" data-icon="mdi:trash-can-outline"></span> 删除</button>
+              </div>
+              <div id="kw-area-${l1i}-${l2i}-${l3i}" class="px-3 pb-2.5 pt-1.5 flex flex-wrap gap-1.5 items-center">
+                ${l3n.keywords.map((kw,ki) => `<span class="cfg-kw-tag">${escH(kw)}<span class="rm" onclick="cfgDeleteKw(${l1i},${l2i},${l3i},${ki})">✕</span></span>`).join('')}
+                <button class="cfg-add-btn text-[11px] h-[22px] px-2" onclick="cfgAddKw(${l1i},${l2i},${l3i})">
+                  <span class="iconify text-sm" data-icon="mdi:plus"></span>添加关键词
+                </button>
+              </div>
+            </div>`;
+      });
+
+      html += `
+            <button class="cfg-add-btn mt-0.5" onclick="cfgAddL3(${l1i},${l2i})">
+              <span class="iconify" data-icon="mdi:plus"></span>添加三级标题
+            </button>
+          </div>
+        </div>`;
+    });
+
+    html += `
+        <button class="cfg-add-btn mt-1" onclick="cfgAddL2(${l1i})">
+          <span class="iconify" data-icon="mdi:plus"></span>添加二级标题
+        </button>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('cfg-tree').innerHTML = html;
+}
+
+// ── 内联编辑辅助（通用）──
+function _cfgInlineEdit(labelEl, currentValue, onDone) {
+  labelEl.innerHTML = '';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = currentValue;
+  inp.style.cssText = 'flex:1;height:24px;border:1px solid #1890FF;border-radius:3px;padding:0 6px;font-size:13px;outline:none;min-width:100px;background:#fff;';
+  labelEl.appendChild(inp);
+  inp.focus(); inp.select();
+
+  let done = false;
+  function finish(save) {
+    if (done) return; done = true;
+    onDone(save ? (inp.value.trim() || currentValue) : null);
+  }
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  inp.addEventListener('blur', () => finish(true));
+}
+
+// ── L1 操作 ──
+function cfgEditL1(l1i) {
+  const lbl = document.getElementById(`cfg-l1-lbl-${l1i}`);
+  _cfgInlineEdit(lbl, CLASSIFY_TREE[l1i].l1, v => {
+    if (v) { CLASSIFY_TREE[l1i].l1 = v; _saveTreeToStorage(); }
+    renderSettingsPage();
+  });
+}
+function cfgDeleteL1(l1i) {
+  if (!confirm(`确认删除一级标题「${CLASSIFY_TREE[l1i].l1}」及其所有子分类和关键词？`)) return;
+  CLASSIFY_TREE.splice(l1i, 1);
+  _saveTreeToStorage(); renderSettingsPage();
+}
+function cfgAddL1() {
+  CLASSIFY_TREE.push({ l1: '新一级标题', children: [] });
+  _saveTreeToStorage(); renderSettingsPage();
+  setTimeout(() => cfgEditL1(CLASSIFY_TREE.length - 1), 30);
+}
+
+// ── L2 操作 ──
+function cfgEditL2(l1i, l2i) {
+  const lbl = document.getElementById(`cfg-l2-lbl-${l1i}-${l2i}`);
+  _cfgInlineEdit(lbl, CLASSIFY_TREE[l1i].children[l2i].l2, v => {
+    if (v) { CLASSIFY_TREE[l1i].children[l2i].l2 = v; _saveTreeToStorage(); }
+    renderSettingsPage();
+  });
+}
+function cfgDeleteL2(l1i, l2i) {
+  const name = CLASSIFY_TREE[l1i].children[l2i].l2;
+  if (!confirm(`确认删除二级标题「${name}」及其所有子分类和关键词？`)) return;
+  CLASSIFY_TREE[l1i].children.splice(l2i, 1);
+  _saveTreeToStorage(); renderSettingsPage();
+}
+function cfgAddL2(l1i) {
+  CLASSIFY_TREE[l1i].children.push({ l2: '新二级标题', children: [] });
+  _saveTreeToStorage(); renderSettingsPage();
+  setTimeout(() => cfgEditL2(l1i, CLASSIFY_TREE[l1i].children.length - 1), 30);
+}
+
+// ── L3 操作 ──
+function cfgEditL3(l1i, l2i, l3i) {
+  const lbl = document.getElementById(`cfg-l3-lbl-${l1i}-${l2i}-${l3i}`);
+  _cfgInlineEdit(lbl, CLASSIFY_TREE[l1i].children[l2i].children[l3i].l3, v => {
+    if (v) { CLASSIFY_TREE[l1i].children[l2i].children[l3i].l3 = v; _saveTreeToStorage(); }
+    renderSettingsPage();
+  });
+}
+function cfgDeleteL3(l1i, l2i, l3i) {
+  const name = CLASSIFY_TREE[l1i].children[l2i].children[l3i].l3;
+  if (!confirm(`确认删除三级标题「${name}」及其所有关键词？`)) return;
+  CLASSIFY_TREE[l1i].children[l2i].children.splice(l3i, 1);
+  _saveTreeToStorage(); renderSettingsPage();
+}
+function cfgAddL3(l1i, l2i) {
+  CLASSIFY_TREE[l1i].children[l2i].children.push({ l3: '新三级标题', keywords: [] });
+  _saveTreeToStorage(); renderSettingsPage();
+  setTimeout(() => cfgEditL3(l1i, l2i, CLASSIFY_TREE[l1i].children[l2i].children.length - 1), 30);
+}
+
+// ── 关键词操作 ──
+function cfgDeleteKw(l1i, l2i, l3i, ki) {
+  CLASSIFY_TREE[l1i].children[l2i].children[l3i].keywords.splice(ki, 1);
+  _saveTreeToStorage(); renderSettingsPage();
+}
+
+function cfgAddKw(l1i, l2i, l3i) {
+  const area = document.getElementById(`kw-area-${l1i}-${l2i}-${l3i}`);
+  if (!area || area.querySelector('.kw-new-inp')) return;
+
+  const addBtn = area.lastElementChild;
+
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.placeholder = '输入关键词，回车确认';
+  inp.className = 'kw-new-inp';
+  inp.style.cssText = 'height:22px;border:1px solid #1890FF;border-radius:3px;padding:0 6px;font-size:12px;outline:none;width:130px;background:#fff;';
+
+  const okBtn = document.createElement('button');
+  okBtn.textContent = '确定';
+  okBtn.style.cssText = 'height:22px;padding:0 7px;border:1px solid #1890FF;border-radius:3px;font-size:11px;color:#1890FF;cursor:pointer;background:#E6F4FF;';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '取消';
+  cancelBtn.style.cssText = 'height:22px;padding:0 7px;border:1px solid #D9D9D9;border-radius:3px;font-size:11px;color:#8C8C8C;cursor:pointer;background:#fff;';
+
+  area.insertBefore(inp, addBtn);
+  area.insertBefore(okBtn, addBtn);
+  area.insertBefore(cancelBtn, addBtn);
+  inp.focus();
+
+  function commit() {
+    const kw = inp.value.trim();
+    if (kw) { CLASSIFY_TREE[l1i].children[l2i].children[l3i].keywords.push(kw); _saveTreeToStorage(); }
+    renderSettingsPage();
+  }
+  function cancel() { renderSettingsPage(); }
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+    if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+  });
+  okBtn.addEventListener('click', commit);
+  cancelBtn.addEventListener('click', cancel);
+}
+
+// ── 保存并应用 ──
+function saveSettings() {
+  rebuildL3Map();
+  clRowCls = {};   // 清除旧的自动分类结果，下次进入清洗页将重新分类
+
+  const btn = document.getElementById('btn-save-settings');
+  if (btn) {
+    const origText = btn.innerHTML;
+    btn.innerHTML = '<span class="iconify" data-icon="mdi:check"></span><span>已保存 ✓</span>';
+    btn.style.background = '#52C41A';
+    setTimeout(() => { btn.innerHTML = origText; btn.style.background = '#1890FF'; }, 1800);
+  }
+}
+
+// ── 恢复默认分类 ──
+function cfgResetToDefault() {
+  if (!confirm('确认恢复默认分类设置？当前所有自定义修改将被覆盖，且无法撤销。')) return;
+  CLASSIFY_TREE = JSON.parse(JSON.stringify(DEFAULT_CLASSIFY_TREE));
+  _saveTreeToStorage();
+  renderSettingsPage();
+}
+
+// ─── 与数据清洗页面相同的列排序逻辑 ───
+const CL_PREFERRED_COLS = ['日期', '进出款项', '余额', '对方户名', '摘要'];
+function buildClColOrder(headers) {
+  const preferredIndices = [];
+  const usedSet = new Set();
+  CL_PREFERRED_COLS.forEach(name => {
+    const idx = headers.findIndex(h => String(h).trim() === name);
+    if (idx >= 0) { preferredIndices.push(idx); usedSet.add(idx); }
+  });
+  const remainingIndices = headers.map((_, i) => i).filter(i => !usedSet.has(i));
+  return [...preferredIndices, ...remainingIndices];
+}
+
+// ─── 保存当前筛选数据 ───
+function saveFilteredData() {
+  try {
+    const fl1 = document.getElementById('cl-l1').value;
+    const fl2 = document.getElementById('cl-l2').value;
+    const fl3 = document.getElementById('cl-l3').value;
+
+    const wb = XLSX.utils.book_new();
+    let totalFiltered = 0;
+
+    sheetNames.forEach(sn => {
+      const data = sheetsData[sn] || [];
+      const rowCls = clRowCls[sn] || {};
+      if (!data.length) return;
+
+      const rawHeaders = data[0] || [];
+      const colOrder = buildClColOrder(rawHeaders);
+      const outHeaders = ['序号', ...colOrder.map(ci => String(rawHeaders[ci]))];
+      const outRows = [outHeaders];
+      let seq = 0;
+
+      for (let r = 1; r < data.length; r++) {
+        const row = data[r] || [];
+        if (row.every(v => v===''||v===undefined||v===null)) continue;
+
+        const cls = rowCls[r] || { l1:'', l2:'', l3:'', keyword:'', manualL3:null };
+        const curL3 = cls.manualL3 !== null ? cls.manualL3 : cls.l3;
+        const curL2 = curL3 ? (L3_MAP[curL3]?.l2 || cls.l2) : cls.l2;
+        const curL1 = curL3 ? (L3_MAP[curL3]?.l1 || cls.l1) : cls.l1;
+
+        if (fl1 && curL1 !== fl1) continue;
+        if (fl2 && curL2 !== fl2) continue;
+        if (fl3 && curL3 !== fl3) continue;
+
+        seq++;
+        const reorderedRow = colOrder.map(ci => row[ci] !== undefined ? row[ci] : '');
+        outRows.push([seq, ...reorderedRow]);
+        totalFiltered++;
+      }
+
+      if (outRows.length > 1) {
+        const ws = XLSX.utils.aoa_to_sheet(outRows);
+        XLSX.utils.book_append_sheet(wb, ws, sn);
+      }
+    });
+
+    if (totalFiltered === 0) {
+      alert('当前筛选条件下没有数据可保存。');
+      return;
+    }
+
+    const filterLabel = fl3 || fl2 || fl1 || '全部';
+    const outName = origName.replace(/\.[^.]+$/, '') + `_${filterLabel}.xlsx`;
+    exportAndSave(wb, outName);
+  } catch(err) { alert('保存失败：' + err.message); }
+}
+
+// ─── 导出分类结果 ───
+function exportCleaned() {
+  try {
+    const wb = XLSX.utils.book_new();
+    sheetNames.forEach(sn => {
+      const data = sheetsData[sn] || [];
+      const rowCls = clRowCls[sn] || {};
+      if (!data.length) return;
+
+      const rawHeaders = data[0] || [];
+      const colOrder = buildClColOrder(rawHeaders);
+      const outHeaders = ['序号', ...colOrder.map(ci => String(rawHeaders[ci]))];
+      const outRows = [outHeaders];
+      let seq = 0;
+
+      for (let r = 1; r < data.length; r++) {
+        const row = data[r] || [];
+        if (row.every(v => v===''||v===undefined||v===null)) continue;
+        seq++;
+        const reorderedRow = colOrder.map(ci => row[ci] !== undefined ? row[ci] : '');
+        outRows.push([seq, ...reorderedRow]);
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(outRows);
+      XLSX.utils.book_append_sheet(wb, ws, sn);
+    });
+    const outName = origName.replace(/\.[^.]+$/, '') + '_分类结果.xlsx';
+    exportAndSave(wb, outName);
+  } catch(err) { alert('导出失败：' + err.message); }
+}
+</script>
+</body>
+</html>
