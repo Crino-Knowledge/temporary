@@ -1,0 +1,220 @@
+# GPU-accelerated rPPG Backend Dockerfile
+# Based on NVIDIA CUDA 11.8 runtime for RTX 3060 support
+
+FROM nvidia/cuda:11.8-runtime-ubuntu20.04
+
+# Set non-interactive mode
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set working directory
+WORKDIR /app
+
+# Update system packages and install dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    build-essential \
+    cmake \
+    pkg-config \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libgtk-3-dev \
+    libatlas-base-dev \
+    gfortran \
+    wget \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# Copy requirements and install Python dependencies
+COPY deployment/requirements_gpu.txt /app/requirements_gpu.txt
+RUN pip3 install --no-cache-dir -r requirements_gpu.txt
+
+# Copy application code
+COPY backend/ /app/
+
+# Create necessary directories
+RUN mkdir -p /app/models /var/log
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+COPY deployment/gpu_backend_config.py /app/config.py
+
+# Create log directory
+RUN mkdir -p /var/log
+
+# Set CUDA environment variables
+ENV CUDA_VISIBLE_DEVICES=0
+ENV NVIDIA_VISIBLE_DEVICES=0
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+# Set PyTorch optimization
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+ENV PYTHONPATH=/app
+
+# Set application environment variables
+ENV FLASK_ENV=production
+ENV USE_GPU=true
+
+# Create GPU monitoring script
+RUN cat > /app/gpu_monitor.py << 'EOF'
+#!/usr/bin/env python3
+import time
+import torch
+import psutil
+from datetime import datetime
+
+def monitor_system():
+    while True:
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print(f"[{timestamp}] System Resource Monitoring:")
+            
+            # CPU and Memory
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            print(f"  CPU Usage: {cpu_percent:.1f}%")
+            print(f"  Memory Usage: {memory.used/1024**3:.1f}GB / {memory.total/1024**3:.1f}GB ({memory.percent:.1f}%)")
+            
+            # GPU Information
+            if torch.cuda.is_available():
+                for i in range(torch.cuda.device_count()):
+                    props = torch.cuda.get_device_properties(i)
+                    allocated = torch.cuda.memory_allocated(i)
+                    reserved = torch.cuda.memory_reserved(i)
+                    print(f"  GPU {i} ({props.name}):")
+                    print(f"    Memory Allocated: {allocated/1024**3:.1f}GB")
+                    print(f"    Memory Reserved: {reserved/1024**3:.1f}GB")
+                    print(f"    Total Memory: {props.total_memory/1024**3:.1f}GB")
+                    print(f"    Usage: {(allocated/props.total_memory)*100:.1f}%")
+            else:
+                print("  GPU: Not Available")
+            
+            print("---")
+        except Exception as e:
+            print(f"Monitoring Error: {e}")
+            # Add logging or error handling here
+
+    else:
+        print("[ERROR] CUDA not available")
+        return False
+        
+        time.sleep(30)
+
+if __name__ == "__main__":
+    monitor_system()
+EOF
+
+# Create GPU verification script
+RUN cat > /app/verify_gpu.py << 'EOF'
+#!/usr/bin/env python3
+import sys
+import torch
+import torchvision
+
+def verify_gpu_setup():
+    print("=== GPU Environment Verification ===")
+    print(f"Python Version: {sys.version}")
+    print(f"PyTorch Version: {torch.__version__}")
+    print(f"TorchVision Version: {torchvision.__version__}")
+    print(f"CUDA Version: {torch.version.cuda}")
+    print(f"cuDNN Version: {torch.backends.cudnn.version()}")
+    
+    if torch.cuda.is_available():
+        print(f"\n[OK] CUDA Available")
+        print(f"GPU Count: {torch.cuda.device_count()}")
+        
+        for i in range(torch.cuda.device_count()):
+            props = torch.cuda.get_device_properties(i)
+            print(f"\nGPU {i}: {props.name}")
+            print(f"  Compute Capability: {props.major}.{props.minor}")
+            print(f"  Total Memory: {props.total_memory/1024**3:.1f}GB")
+            print(f"  Multiprocessor Count: {props.multi_processor_count}")
+        
+        # Test GPU computation
+        print("\n[*] GPU computation test...")
+        device = torch.device('cuda:0')
+        x = torch.randn(1000, 1000, device=device)
+        y = torch.randn(1000, 1000, device=device)
+        z = torch.mm(x, y)
+        print(f"[OK] GPU matrix multiplication test passed: {z.shape}")
+        
+        # Clean GPU memory
+        del x, y, z
+        torch.cuda.empty_cache()
+        
+    else:
+        print("[ERROR] CUDA not available")
+        return False
+    
+    return True
+
+if __name__ == "__main__":
+    success = verify_gpu_setup()
+    sys.exit(0 if success else 1)
+EOF
+
+# Set script permissions
+RUN chmod +x /app/gpu_monitor.py /app/verify_gpu.py
+
+# Expose port
+EXPOSE 5000
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app /var/log
+
+# Switch to non-root user
+USER app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+# Create startup script
+USER root
+RUN cat > /app/start.sh << 'EOF'
+#!/bin/bash
+set -e
+
+echo "=== rPPG GPU Backend Startup ==="
+
+# Verify GPU environment (runtime verification)
+echo "Verifying GPU environment..."
+python /app/verify_gpu.py
+
+if [ $? -eq 0 ]; then
+    echo "[OK] GPU environment verification passed"
+else
+    echo "[WARNING] GPU environment verification failed, will use CPU mode"
+fi
+
+# Start application
+echo "Starting rPPG backend service..."
+exec python app.py
+EOF
+
+RUN chmod +x /app/start.sh && chown app:app /app/start.sh
+
+# Switch back to non-root user
+USER app
+
+# Startup command
+CMD ["/app/start.sh"]

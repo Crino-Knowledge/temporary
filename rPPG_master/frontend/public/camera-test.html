@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摄像头测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            max-width: 640px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>摄像头功能测试</h1>
+    <div id="status"></div>
+    <video id="video" autoplay muted></video>
+    <div>
+        <button id="startBtn" onclick="startCamera()">启动摄像头</button>
+        <button id="stopBtn" onclick="stopCamera()" disabled>停止摄像头</button>
+    </div>
+    
+    <script>
+        let stream = null;
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusDiv = document.getElementById('status');
+        
+        function showStatus(message, isError = false) {
+            statusDiv.innerHTML = `<div class="status ${isError ? 'error' : 'success'}">${message}</div>`;
+        }
+        
+        async function startCamera() {
+            try {
+                showStatus('正在启动摄像头...');
+                
+                // 检查浏览器支持
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('您的浏览器不支持摄像头功能');
+                }
+                
+                // 请求摄像头权限
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640, max: 1280 },
+                        height: { ideal: 480, max: 720 },
+                        facingMode: 'user',
+                        frameRate: { ideal: 30, max: 60 }
+                    }
+                });
+                
+                // 设置视频流
+                video.srcObject = stream;
+                
+                // 等待视频加载
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => {
+                        video.play().then(resolve).catch(reject);
+                    };
+                    video.onerror = () => reject(new Error('视频加载失败'));
+                });
+                
+                showStatus('摄像头启动成功！');
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('摄像头启动失败:', error);
+                
+                let errorMessage = '摄像头启动失败';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = '摄像头权限被拒绝，请允许访问摄像头后重试';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = '未找到摄像头设备，请检查摄像头是否连接';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = '摄像头被其他应用占用，请关闭其他使用摄像头的应用';
+                } else if (error.name === 'OverconstrainedError') {
+                    errorMessage = '摄像头不支持所需的分辨率或帧率';
+                } else {
+                    errorMessage = error.message || '摄像头启动失败';
+                }
+                
+                showStatus(errorMessage, true);
+            }
+        }
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                video.srcObject = null;
+                
+                showStatus('摄像头已停止');
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+        
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', stopCamera);
+    </script>
+</body>
+</html>

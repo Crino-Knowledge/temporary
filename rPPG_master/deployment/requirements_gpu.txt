@@ -1,0 +1,61 @@
+# GPU加速rPPG后端依赖包
+# 针对NVIDIA RTX 3060和CUDA 11.8优化
+
+# 深度学习框架
+torch==2.0.1+cu118
+torchvision==0.15.2+cu118
+torchaudio==2.0.2+cu118
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+# Web框架
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.6
+
+# 图像处理
+opencv-python==4.8.1.78
+Pillow==10.0.1
+numpy==1.24.3
+scipy==1.11.3
+scikit-image==0.21.0
+
+# 信号处理
+scipy==1.11.3
+
+# 数据处理
+pandas==2.0.3
+
+# HTTP客户端
+requests==2.31.0
+
+# 异步支持
+eventlet==0.33.3
+
+# 系统监控
+psutil==5.9.5
+GPUtil==1.4.0
+
+# 日志
+loguru==0.7.2
+
+# 配置管理
+python-dotenv==1.0.0
+
+# 数学计算
+numba==0.58.1
+
+# 时间处理
+python-dateutil==2.8.2
+
+# JSON处理
+orjson==3.9.7
+
+# 内存优化
+memory-profiler==0.61.0
+
+# CUDA工具
+cupy-cuda11x==12.2.0
+
+# 其他工具
+tqdm==4.66.1
+colorama==0.4.6
